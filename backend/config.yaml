@@ -1,0 +1,18 @@
+maturin:
+  server:
+    port: "8080"
+    timeout: 30
+
+  database:
+    host: localhost
+    port: 5432
+    user: postgres
+    name: maturin
+    sslmode: disable
+
+  redis:
+    addr: localhost:6379
+
+  jwt:
+    access_token_ttl: 15 # в минутах
+    refresh_token_ttl: 10080 # в минутах
