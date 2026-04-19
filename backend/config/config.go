@@ -11,6 +11,7 @@ type AppConfig struct {
 	Database DatabaseConfig `yaml:"database"`
 	Redis    RedisConfig    `yaml:"redis"`
 	JWT      JWTConfig      `yaml:"jwt"`
+	SMTP     SMTPConfig     `yaml:"smtp"`
 }
 
 type ServerConfig struct {
@@ -36,6 +37,13 @@ type JWTConfig struct {
 	Secret          string `env:"JWT_SECRET" env-required:"true"`
 	AccessTokenTTL  int    `yaml:"access_token_ttl"  env:"JWT_ACCESS_TTL"  env-default:"15"`    // minutes
 	RefreshTokenTTL int    `yaml:"refresh_token_ttl" env:"JWT_REFRESH_TTL" env-default:"10080"` // minutes (7 days)
+}
+
+type SMTPConfig struct {
+	Host     string `yaml:"host"     env:"SMTP_HOST"     env-default:"smtp.beget.com"`
+	Port     int    `yaml:"port"     env:"SMTP_PORT"     env-default:"465"`
+	User     string `yaml:"user"     env:"SMTP_USER"     env-default:"noreply@imaginelipa.ru"`
+	Password string `env:"SMTP_PASSWORD" env-required:"true"`
 }
 
 func Load(path string) (*Config, error) {

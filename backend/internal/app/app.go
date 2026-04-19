@@ -11,6 +11,7 @@ import (
 	"github.com/sskotezhov/maturin/config"
 	"github.com/sskotezhov/maturin/internal/auth"
 	"github.com/sskotezhov/maturin/internal/user"
+	"github.com/sskotezhov/maturin/pkg/email"
 )
 
 type App struct {
@@ -29,14 +30,24 @@ func New(cfg *config.Config, db *gorm.DB, rdb *redis.Client) (*App, error) {
 	}
 
 	jwtCfg := cfg.Maturin.JWT
+	smtpCfg := cfg.Maturin.SMTP
 
 	//user
 	userRepo := user.NewRepository(db)
+
+	//email
+	emailSender := email.NewSender(email.Config{
+		Host:     smtpCfg.Host,
+		Port:     smtpCfg.Port,
+		User:     smtpCfg.User,
+		Password: smtpCfg.Password,
+	})
 
 	//auth
 	authSvc := auth.NewService(
 		userRepo,
 		rdb,
+		emailSender,
 		jwtCfg.Secret,
 		time.Duration(jwtCfg.AccessTokenTTL)*time.Minute,
 		time.Duration(jwtCfg.RefreshTokenTTL)*time.Minute,
