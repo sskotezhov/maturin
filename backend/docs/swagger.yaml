@@ -67,8 +67,6 @@ definitions:
         type: string
       password:
         type: string
-      repeat_password:
-        type: string
     type: object
 host: 93.77.160.169
 info:

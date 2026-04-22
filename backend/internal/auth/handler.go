@@ -33,10 +33,9 @@ type registerRequest struct {
 }
 
 type verifyEmailRequest struct {
-	Email          string `json:"email"`
-	Code           string `json:"code"`
-	Password       string `json:"password"`
-	RepeatPassword string `json:"repeat_password"`
+	Email    string `json:"email"`
+	Code     string `json:"code"`
+	Password string `json:"password"`
 }
 
 type resendVerificationRequest struct {
@@ -135,10 +134,6 @@ func (h *Handler) verifyEmail(c echo.Context) error {
 	var req verifyEmailRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, echo.Map{"error": "invalid request"})
-	}
-
-	if req.Password != req.RepeatPassword {
-		return c.JSON(http.StatusBadRequest, echo.Map{"error": "passwords do not match"})
 	}
 
 	tokens, err := h.svc.VerifyEmail(c.Request().Context(), req.Email, req.Code, req.Password)
