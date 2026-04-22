@@ -29,13 +29,14 @@ func (h *Handler) Register(g *echo.Group) {
 // Request/response structs
 
 type registerRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email string `json:"email"`
 }
 
 type verifyEmailRequest struct {
-	Email string `json:"email"`
-	Code  string `json:"code"`
+	Email          string `json:"email"`
+	Code           string `json:"code"`
+	Password       string `json:"password"`
+	RepeatPassword string `json:"repeat_password"`
 }
 
 type resendVerificationRequest struct {
@@ -91,11 +92,11 @@ func newAuthResponse(t *Tokens) authResponse {
 
 // Handlers
 
-// @Summary     Register a new user
+// @Summary     Send email verification code
 // @Tags        auth
 // @Accept      json
 // @Produce     json
-// @Param       body body registerRequest true "Email and password"
+// @Param       body body registerRequest true "Email"
 // @Success     201 {object} map[string]string
 // @Failure     400 {object} map[string]string
 // @Failure     409 {object} map[string]string
@@ -107,11 +108,9 @@ func (h *Handler) register(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, echo.Map{"error": "invalid request"})
 	}
 
-	err := h.svc.Register(c.Request().Context(), req.Email, req.Password)
+	err := h.svc.Register(c.Request().Context(), req.Email)
 	if err != nil {
 		switch {
-		case errors.Is(err, ErrWeakPassword):
-			return c.JSON(http.StatusBadRequest, echo.Map{"error": err.Error()})
 		case errors.Is(err, ErrEmailAlreadyTaken):
 			return c.JSON(http.StatusConflict, echo.Map{"error": err.Error()})
 		default:
@@ -122,11 +121,11 @@ func (h *Handler) register(c echo.Context) error {
 	return c.JSON(http.StatusCreated, echo.Map{"message": "verification code sent to email"})
 }
 
-// @Summary     Verify email with code
+// @Summary     Verify email and complete registration
 // @Tags        auth
 // @Accept      json
 // @Produce     json
-// @Param       body body verifyEmailRequest true "Email and verification code"
+// @Param       body body verifyEmailRequest true "Email, verification code and password"
 // @Success     200 {object} authResponse
 // @Failure     400 {object} map[string]string
 // @Failure     401 {object} map[string]string
@@ -138,13 +137,17 @@ func (h *Handler) verifyEmail(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, echo.Map{"error": "invalid request"})
 	}
 
-	tokens, err := h.svc.VerifyEmail(c.Request().Context(), req.Email, req.Code)
+	if req.Password != req.RepeatPassword {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "passwords do not match"})
+	}
+
+	tokens, err := h.svc.VerifyEmail(c.Request().Context(), req.Email, req.Code, req.Password)
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrInvalidCode):
 			return c.JSON(http.StatusUnauthorized, echo.Map{"error": err.Error()})
-		case errors.Is(err, ErrInvalidCredentials):
-			return c.JSON(http.StatusUnauthorized, echo.Map{"error": err.Error()})
+		case errors.Is(err, ErrWeakPassword):
+			return c.JSON(http.StatusBadRequest, echo.Map{"error": err.Error()})
 		default:
 			return c.JSON(http.StatusInternalServerError, echo.Map{"error": "internal error"})
 		}

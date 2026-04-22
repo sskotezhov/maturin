@@ -40,8 +40,8 @@ type Tokens struct {
 }
 
 type Service interface {
-	Register(ctx context.Context, email, password string) error
-	VerifyEmail(ctx context.Context, email, code string) (*Tokens, error)
+	Register(ctx context.Context, email string) error
+	VerifyEmail(ctx context.Context, email, code, password string) (*Tokens, error)
 	ResendVerification(ctx context.Context, email string) error
 	Login(ctx context.Context, email, password string) (*Tokens, error)
 	Refresh(ctx context.Context, refreshToken string) (*Tokens, error)
@@ -70,29 +70,12 @@ func NewService(userRepo user.Repository, rdb *redis.Client, emailSender EmailSe
 	}
 }
 
-func (s *service) Register(ctx context.Context, email, password string) error {
+func (s *service) Register(ctx context.Context, email string) error {
 	slog.Info("user register started", "email", email)
-	if err := util.ValidatePassword(password); err != nil {
-		return ErrWeakPassword
-	}
 
 	existing, err := s.userRepo.FindByEmail(ctx, email)
 	if err == nil && existing != nil {
 		return ErrEmailAlreadyTaken
-	}
-
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return err
-	}
-
-	u := &user.User{
-		Email:        email,
-		PasswordHash: string(hash),
-		Role:         user.RoleClient,
-	}
-	if err := s.userRepo.Create(ctx, u); err != nil {
-		return err
 	}
 
 	code, err := generateVerificationCode()
@@ -100,7 +83,7 @@ func (s *service) Register(ctx context.Context, email, password string) error {
 		return err
 	}
 
-	if err := s.redis.Set(ctx, emailVerifyKey(u.ID), code, 15*time.Minute).Err(); err != nil {
+	if err := s.redis.Set(ctx, emailVerifyKey(email), code, 15*time.Minute).Err(); err != nil {
 		return err
 	}
 
@@ -108,18 +91,14 @@ func (s *service) Register(ctx context.Context, email, password string) error {
 		return err
 	}
 
-	slog.Info("user register finished, verification code sent", "email", email)
+	slog.Info("verification code sent", "email", email)
 	return nil
 }
 
 func (s *service) ResendVerification(ctx context.Context, email string) error {
-	u, err := s.userRepo.FindByEmail(ctx, email)
-	if err != nil {
-		return ErrInvalidCredentials
-	}
-
-	if u.EmailVerified {
-		return nil
+	existing, err := s.userRepo.FindByEmail(ctx, email)
+	if err == nil && existing != nil {
+		return ErrEmailAlreadyTaken
 	}
 
 	code, err := generateVerificationCode()
@@ -127,30 +106,39 @@ func (s *service) ResendVerification(ctx context.Context, email string) error {
 		return err
 	}
 
-	if err := s.redis.Set(ctx, emailVerifyKey(u.ID), code, 15*time.Minute).Err(); err != nil {
+	if err := s.redis.Set(ctx, emailVerifyKey(email), code, 15*time.Minute).Err(); err != nil {
 		return err
 	}
 
 	return s.emailSender.SendVerificationCode(email, code)
 }
 
-func (s *service) VerifyEmail(ctx context.Context, email, code string) (*Tokens, error) {
-	u, err := s.userRepo.FindByEmail(ctx, email)
-	if err != nil {
-		return nil, ErrInvalidCredentials
-	}
-
-	stored, err := s.redis.Get(ctx, emailVerifyKey(u.ID)).Result()
+func (s *service) VerifyEmail(ctx context.Context, email, code, password string) (*Tokens, error) {
+	stored, err := s.redis.Get(ctx, emailVerifyKey(email)).Result()
 	if err != nil || stored != code {
 		return nil, ErrInvalidCode
 	}
 
-	u.EmailVerified = true
-	if err := s.userRepo.Update(ctx, u); err != nil {
+	if err := util.ValidatePassword(password); err != nil {
+		return nil, ErrWeakPassword
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
 		return nil, err
 	}
 
-	if err := s.redis.Del(ctx, emailVerifyKey(u.ID)).Err(); err != nil {
+	u := &user.User{
+		Email:         email,
+		PasswordHash:  string(hash),
+		Role:          user.RoleClient,
+		EmailVerified: true,
+	}
+	if err := s.userRepo.Create(ctx, u); err != nil {
+		return nil, err
+	}
+
+	if err := s.redis.Del(ctx, emailVerifyKey(email)).Err(); err != nil {
 		return nil, err
 	}
 
@@ -293,8 +281,8 @@ func refreshKey(token string) string {
 	return fmt.Sprintf("refresh:%s", token)
 }
 
-func emailVerifyKey(userID uint) string {
-	return fmt.Sprintf("email_verify:%d", userID)
+func emailVerifyKey(email string) string {
+	return fmt.Sprintf("email_verify:%s", email)
 }
 
 func pwdResetKey(userID uint) string {

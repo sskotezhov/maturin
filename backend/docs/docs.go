@@ -248,10 +248,10 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "Register a new user",
+                "summary": "Send email verification code",
                 "parameters": [
                     {
-                        "description": "Email and password",
+                        "description": "Email",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -428,10 +428,10 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "Verify email with code",
+                "summary": "Verify email and complete registration",
                 "parameters": [
                     {
-                        "description": "Email and verification code",
+                        "description": "Email, verification code and password",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -533,9 +533,6 @@ const docTemplate = `{
             "properties": {
                 "email": {
                     "type": "string"
-                },
-                "password": {
-                    "type": "string"
                 }
             }
         },
@@ -582,6 +579,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "repeat_password": {
                     "type": "string"
                 }
             }
