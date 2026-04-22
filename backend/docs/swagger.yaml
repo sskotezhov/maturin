@@ -35,8 +35,6 @@ definitions:
     properties:
       email:
         type: string
-      password:
-        type: string
     type: object
   auth.resendVerificationRequest:
     properties:
@@ -66,6 +64,10 @@ definitions:
       code:
         type: string
       email:
+        type: string
+      password:
+        type: string
+      repeat_password:
         type: string
     type: object
 host: 93.77.160.169
@@ -224,7 +226,7 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Email and password
+      - description: Email
         in: body
         name: body
         required: true
@@ -257,7 +259,7 @@ paths:
             additionalProperties:
               type: string
             type: object
-      summary: Register a new user
+      summary: Send email verification code
       tags:
       - auth
   /auth/resend-verification:
@@ -341,7 +343,7 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Email and verification code
+      - description: Email, verification code and password
         in: body
         name: body
         required: true
@@ -372,7 +374,7 @@ paths:
             additionalProperties:
               type: string
             type: object
-      summary: Verify email with code
+      summary: Verify email and complete registration
       tags:
       - auth
 securityDefinitions:
