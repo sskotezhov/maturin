@@ -583,9 +583,6 @@ const docTemplate = `{
                 },
                 "password": {
                     "type": "string"
-                },
-                "repeat_password": {
-                    "type": "string"
                 }
             }
         }
