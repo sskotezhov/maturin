@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/redis/go-redis/v9"
 	echoSwagger "github.com/swaggo/echo-swagger"
 	"gorm.io/gorm"
@@ -24,6 +25,15 @@ type App struct {
 func New(cfg *config.Config, db *gorm.DB, rdb *redis.Client) (*App, error) {
 	e := echo.New()
 	e.HideBanner = true
+
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{
+			"http://localhost:3000",
+			"http://93.77.160.169",
+		},
+		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders: []string{"Content-Type", "Authorization"},
+	}))
 
 	if err := migrate(db); err != nil {
 		return nil, err
