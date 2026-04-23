@@ -5,7 +5,7 @@ export default function Footer() {
     <footer className="footer">
 		<div className="container">
 			<div className="consultation" id="consultation">
-				<Image className="lp" src="/images/footer/lp.png" width={561} height={606}/>
+				<Image alt="" className="lp" src="/images/footer/lp.png" width={561} height={606}/>
 				<div className="center">
 					<b className="title">ЗАПИШИТЕСЬ НА БЕСПЛАТНУЮ КОНСУЛЬТАЦИЮ ПРЯМО СЕЙЧАС</b>
 					<div className="form">
@@ -30,11 +30,14 @@ export default function Footer() {
 						</div>
 					</div>
 				</div>
-				<Image className="rp" src="/images/footer/rp.png" width={588} height={544}/>
+				<Image alt="" className="rp" src="/images/footer/rp.png" width={588} height={544}/>
 			</div>
         
 			<div className="footer-bottom">
-			  <p>&copy; 2026. Все права защищены.</p>
+				<div className="content">
+					<p>&copy; 2026. Все права защищены.</p>
+					<a>Политика конфидециальности</a>
+				</div>
 			</div>
 		</div>
     </footer>

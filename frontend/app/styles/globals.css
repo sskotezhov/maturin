@@ -1,0 +1,18 @@
+@import './variables.css';
+@import './header.css';
+@import './slider.css';
+@import './partners.css';
+@import './footer.css';
+@import './home.css';
+@import './authModal.css';
+
+body {
+	margin: 0;
+	padding: 0;
+}
+
+:link,
+:visited {
+	color: var(--color-white);
+	text-decoration: none;
+}

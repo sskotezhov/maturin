@@ -1,0 +1,53 @@
+.partners {
+	justify-content: center;
+	display: flex;
+	width: 100%;
+}
+
+.partners .container {
+	display: flex;
+	justify-content: center;
+	max-width: 1240px;
+	gap: 20px;
+}
+
+.partners .container .rectangle {
+	height: 150px;
+	width: 610px;
+	display: flex;
+	border-width: 3px;
+	border-color: rgba(102, 68, 170, 0.4);
+	border-style: solid;
+	border-radius: 8px;
+	overflow: hidden;
+	margin-top: 58px;
+	justify-content: center;
+	align-items: center;
+	background-color: var(--color-white);
+	margin-bottom: 50px;
+}
+
+.partners .container .rectangle .text {
+	display: flex;
+	overflow: hidden;
+	justify-content: flex-start;
+}
+
+.partners .container .rectangle:nth-of-type(1) .text {
+	max-width: 210px;
+	margin-left: 32px;
+}
+
+.partners .container .rectangle:nth-of-type(2) .text {
+	max-width: 269px;
+	margin-left: 32px;
+}
+
+.partners .container .rectangle .text .prefix-text {
+	color: var(--color-blue);
+	font-size: 24px;
+}
+
+.partners .container .rectangle .text .prefix-text .company-name {
+	color: rgba(253, 119, 108, 1);
+}
