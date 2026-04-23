@@ -1,0 +1,125 @@
+.header {
+	display: flex;
+	flex-direction: column;
+}
+
+.header .top {
+	background: var(--color-white);
+	justify-content: center;
+	display: flex;
+}
+
+.header .top * {
+	align-items: center;
+	display: flex;
+	margin: 6px;
+}
+
+.header .top .center .mail {
+	font-size: 14px;
+}
+
+.header .top .center .geo {
+	font-size: 14px;
+}
+
+.header .top .center .tele {
+	font-size: 16px;
+}
+
+.header .top .center .logo {
+	position: relative;
+	bottom: 10px;
+}
+
+.header .bottom {
+	background: var(--color-purple);
+	height: 50px;
+	justify-content: center;
+	display: flex;
+}
+
+.header .bottom .center {
+	justify-content: space-between;
+	align-items: center;
+	max-width: 1240px;
+	width: 100%;
+	display: flex;
+}
+
+.header .bottom .center a {
+	font-size: 18px;
+	color: var(--color-white);
+	height: 100%;
+}
+
+.header .bottom .center .menu-item {
+	position: relative;
+	display: flex;
+	align-items: center;
+	align-content: center;
+	justify-content: center;
+	height: 100%;
+	width: 100%;
+}
+
+.header .bottom .center .menu-item .menu-link {
+	height: 100%;
+	width: 100%;
+	justify-content: center;
+	justify-items: center;
+	align-items: center;
+	align-content: center;
+	text-align: center;
+	transition: background-color 0.2s ease;
+}
+
+.header .bottom .center .menu-item > .menu-link:hover {
+	background-color: var(--color-black-purple);
+}
+
+.header .bottom .center .menu-item > .dropdown-content {
+	top: 100%;
+	position: absolute;
+	display: none;
+	background-color: var(--color-white);
+	z-index: 1000;
+	align-items: center;
+	align-content: center;
+	justify-content: center;
+	flex-direction: column;
+	min-width: 220px;
+	border-radius: 8px;
+	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+	border: 1px solid rgba(102, 68, 170, 0.1);
+	overflow: hidden;
+	padding: 5px 0;
+}
+
+.header .bottom .center .menu-item > .dropdown-content .menu-link {
+	width: 100%;
+	height: auto;
+	padding: 12px 20px;
+	box-sizing: border-box;
+	z-index: 1000;
+	text-align: left;
+	color: var(--color-black);
+	font-size: 16px;
+	justify-content: flex-start;
+	background-color: transparent;
+	border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+	border-width: 0px;
+}
+
+.header .bottom .center .menu-item > .dropdown-content .menu-link:last-child {
+	border-bottom: none;
+}
+
+.header .bottom .center .menu-item > .dropdown-content .menu-link:hover {
+	background-color: rgba(102, 68, 170, 0.05);
+	color: var(--color-purple);
+}
+
+.header .bottom .center .menu-item:hover > .dropdown-content {
+	display: flex;
+}
