@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Image from "next/image"
+import Link from "next/link"
 
 const Slider = () => {
   const slides = [
-    ['Слайд 1', "/images/homeslider/slide1.png", "Текст для первого слайда"],
-    ['Слайд 2', "/images/homeslider/slide1.png", "Текст2"],
-    ['Слайд 3', "/images/homeslider/slide1.png", "Текст3"],
-	['Слайд 4', "/images/homeslider/slide1.png", "Текст3"],
+    ['Слайд 1', "/images/homeslider/slide1.png", "БУХГАЛТЕРСКОЕ", "ОБСЛУЖИВАНИЕ", "/services/accounting"],
+    ['Слайд 2', "/images/homeslider/slide1.png", "Текст2", "Текст2", "/services/service2"],
+    ['Слайд 3', "/images/homeslider/slide1.png", "Текст3", "Текст3", "/services/service3"],
+    ['Слайд 4', "/images/homeslider/slide1.png", "Текст4", "Текст4", "/services/service4"],
   ];
 
   const [current, setCurrent] = useState(0);
@@ -166,8 +167,22 @@ const Slider = () => {
             />
             <div className="slide-content-wrapper">
               <div className="slide-text-box">
+                <span className="border-top"></span>
+                <span className="border-bottom"></span>
+                <span className="border-left-top"></span>
+                <span className="border-left-bottom"></span>
+                <span className="border-right-top"></span>
+                <span className="border-right-bottom"></span>
                 <div className="slide-text-content">
-                  {slide[2]}
+                  <div className="first-row">
+                    {slide[2]}
+                  </div>
+                  <div className="second-row">
+                    {slide[3]}
+                  </div>
+                  <Link href={slide[4]} className="capsule">
+                    Подробнее
+                  </Link>
                 </div>
               </div>
             </div>

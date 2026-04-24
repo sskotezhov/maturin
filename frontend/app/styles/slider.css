@@ -30,20 +30,82 @@
 	height: 100%;
 	position: relative;
 }
-
 .slide-text-box {
 	position: absolute;
-	left: 0;
+	left: 10;
 	top: 50%;
 	transform: translateY(-50%);
 	width: 520px;
 	height: 370px;
-	background: transparent;
 	padding: 20px;
 	display: flex;
 	align-items: center;
 	z-index: 5;
 	box-sizing: border-box;
+	
+	
+	.first-row {
+		font-style: medium;
+		font-size: 42px;
+	}
+	.second-row {
+		font-style: extra bold;
+		font-size: 54px;
+	}
+}
+
+.slide-text-box .border-top {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 4px;
+	background: white;
+}
+
+.slide-text-box .border-bottom {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	height: 4px;
+	background: white;
+}
+
+.slide-text-box .border-left-top {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 4px;
+	height: calc(50% - 100px);
+	background: white;
+}
+
+.slide-text-box .border-left-bottom {
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	width: 4px;
+	height: calc(50% - 100px);
+	background: white;
+}
+
+.slide-text-box .border-right-top {
+	position: absolute;
+	right: 0;
+	top: 0;
+	width: 4px;
+	height: calc(50% - 100px);
+	background: white;
+}
+
+.slide-text-box .border-right-bottom {
+	position: absolute;
+	right: 0;
+	bottom: 0;
+	width: 4px;
+	height: calc(50% - 100px);
+	background: white;
 }
 
 .slide-text-content {
@@ -52,6 +114,10 @@
 	line-height: 1.5;
 	font-weight: 500;
 	text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+	
+	.slide-link {
+		
+	}
 }
 
 .slider-dots {
@@ -105,3 +171,4 @@
 	font-size: 16px;
 	font-family: Open Sans;
 }
+
