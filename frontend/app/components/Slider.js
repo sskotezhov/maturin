@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from "next/image"
 import Link from "next/link"
 
@@ -12,33 +12,68 @@ const Slider = () => {
     ['Слайд 4', "/images/homeslider/slide1.png", "Текст4", "Текст4", "/services/service4"],
   ];
 
-  const [current, setCurrent] = useState(0);
+  const extendedSlides = [
+    slides[slides.length - 1], 
+    ...slides,
+    slides[0],
+  ];
+
+  const [current, setCurrent] = useState(1);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
-  const [currentTranslate, setCurrentTranslate] = useState(0);
-  const [prevTranslate, setPrevTranslate] = useState(0);
+  const [currentTranslate, setCurrentTranslate] = useState(-100);
+  const [prevTranslate, setPrevTranslate] = useState(-100);
+  const [transition, setTransition] = useState(true);
   const sliderRef = useRef(null);
   const containerRef = useRef(null);
   const autoPlayRef = useRef(null);
+  const isTransitioningRef = useRef(false);
+  const currentRef = useRef(1);
 
-  const nextSlide = () => {
-    setCurrent(current === slides.length - 1 ? 0 : current + 1);
-  };
+  useEffect(() => {
+    currentRef.current = current;
+  }, [current]);
 
-  const prevSlide = () => {
-    setCurrent(current === 0 ? slides.length - 1 : current - 1);
-  };
+  const getRealIndex = useCallback((extendedIndex) => {
+    if (extendedIndex === 0) return slides.length - 1;
+    if (extendedIndex === extendedSlides.length - 1) return 0;
+    return extendedIndex - 1;
+  }, [slides.length, extendedSlides.length]);
+
+  const nextSlide = useCallback(() => {
+    if (isTransitioningRef.current) return;
+    isTransitioningRef.current = true;
+    setTransition(true);
+    setCurrent(prev => prev + 1);
+  }, []);
+
+  const prevSlide = useCallback(() => {
+    if (isTransitioningRef.current) return;
+    isTransitioningRef.current = true;
+    setTransition(true);
+    setCurrent(prev => prev - 1);
+  }, []);
 
   const goToSlide = (index) => {
-    setCurrent(index);
+    if (isTransitioningRef.current) return;
+    isTransitioningRef.current = true;
+    setTransition(true);
+    setCurrent(index + 1);
   };
+
+  const snapToNearestSlide = useCallback(() => {
+    const nearestIndex = Math.round(-currentTranslate / 100);
+    const clampedIndex = Math.max(0, Math.min(nearestIndex, extendedSlides.length - 1));
+    setCurrent(clampedIndex);
+  }, [currentTranslate, extendedSlides.length]);
 
   const handleTouchStart = (e) => {
     stopAutoPlay();
     const touch = e.touches[0];
     setStartX(touch.clientX);
     setIsDragging(true);
-    setPrevTranslate(-current * 100);
+    setTransition(false);
+    setPrevTranslate(currentTranslate);
   };
 
   const handleTouchMove = (e) => {
@@ -46,22 +81,19 @@ const Slider = () => {
     const touch = e.touches[0];
     const diff = touch.clientX - startX;
     const translateValue = prevTranslate + (diff / sliderRef.current.offsetWidth) * 100;
-    setCurrentTranslate(Math.max(Math.min(translateValue, 0), -(slides.length - 1) * 100));
+
+    const minTranslate = -(extendedSlides.length - 1) * 100;
+    const maxTranslate = 0;
+    
+    setCurrentTranslate(Math.max(Math.min(translateValue, maxTranslate), minTranslate));
   };
 
   const handleTouchEnd = () => {
     if (!isDragging) return;
     setIsDragging(false);
-    
-    const movedBy = currentTranslate - prevTranslate;
-    
-    if (Math.abs(movedBy) > 20) {
-      if (movedBy < 0) {
-        nextSlide();
-      } else {
-        prevSlide();
-      }
-    }
+    setTransition(true);
+
+    snapToNearestSlide();
     
     startAutoPlay();
   };
@@ -71,7 +103,8 @@ const Slider = () => {
     stopAutoPlay();
     setStartX(e.clientX);
     setIsDragging(true);
-    setPrevTranslate(-current * 100);
+    setTransition(false);
+    setPrevTranslate(currentTranslate);
   };
 
   const handleMouseMove = (e) => {
@@ -79,22 +112,19 @@ const Slider = () => {
     e.preventDefault();
     const diff = e.clientX - startX;
     const translateValue = prevTranslate + (diff / sliderRef.current.offsetWidth) * 100;
-    setCurrentTranslate(Math.max(Math.min(translateValue, 0), -(slides.length - 1) * 100));
+    
+    const minTranslate = -(extendedSlides.length - 1) * 100;
+    const maxTranslate = 0;
+    
+    setCurrentTranslate(Math.max(Math.min(translateValue, maxTranslate), minTranslate));
   };
 
   const handleMouseUp = () => {
     if (!isDragging) return;
     setIsDragging(false);
+    setTransition(true);
     
-    const movedBy = currentTranslate - prevTranslate;
-    
-    if (Math.abs(movedBy) > 20) {
-      if (movedBy < 0) {
-        nextSlide();
-      } else {
-        prevSlide();
-      }
-    }
+    snapToNearestSlide();
     
     startAutoPlay();
   };
@@ -105,6 +135,33 @@ const Slider = () => {
     }
   };
 
+  useEffect(() => {
+    if (!isDragging && transition) {
+      const newTranslate = -current * 100;
+      setCurrentTranslate(newTranslate);
+
+      if (current === 0 || current === extendedSlides.length - 1) {
+        const timeout = setTimeout(() => {
+          setTransition(false);
+          if (current === 0) {
+            setCurrent(slides.length);
+            setCurrentTranslate(-slides.length * 100);
+          } else {
+            setCurrent(1);
+            setCurrentTranslate(-100);
+          }
+          setTimeout(() => {
+            isTransitioningRef.current = false;
+            setTransition(true);
+          }, 50);
+        }, 300);
+        return () => clearTimeout(timeout);
+      } else {
+        isTransitioningRef.current = false;
+      }
+    }
+  }, [current, isDragging, transition, slides.length, extendedSlides.length]);
+
   const stopAutoPlay = () => {
     if (autoPlayRef.current) {
       clearInterval(autoPlayRef.current);
@@ -113,26 +170,15 @@ const Slider = () => {
 
   const startAutoPlay = () => {
     stopAutoPlay();
-    autoPlayRef.current = setInterval(nextSlide, 3000);
+    autoPlayRef.current = setInterval(() => {
+      nextSlide();
+    }, 3000);
   };
 
   useEffect(() => {
     startAutoPlay();
     return () => stopAutoPlay();
   }, []);
-
-  useEffect(() => {
-    if (!isDragging) {
-      setCurrentTranslate(-current * 100);
-    }
-  }, [current, isDragging]);
-
-  const getTransform = () => {
-    if (isDragging) {
-      return `translateX(${currentTranslate}%)`;
-    }
-    return `translateX(-${current * 100}%)`;
-  };
 
   return (
     <div 
@@ -143,8 +189,8 @@ const Slider = () => {
         className="slider-container"
         ref={containerRef}
         style={{ 
-          transform: getTransform(),
-          transition: isDragging ? 'none' : 'transform 0.3s ease-out',
+          transform: `translateX(${currentTranslate}%)`,
+          transition: transition ? 'transform 0.3s ease-out' : 'none',
           cursor: isDragging ? 'grabbing' : 'grab'
         }}
         onTouchStart={handleTouchStart}
@@ -155,15 +201,15 @@ const Slider = () => {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
       >
-        {slides.map((slide, index) => (
-          <div key={index} className="slide">
+        {extendedSlides.map((slide, index) => (
+          <div key={`${index}-${slide[0]}`} className="slide">
             <Image 
               src={slide[1]} 
               alt={slide[0]} 
               sizes="100vw" 
               fill={true}
               draggable={false}
-              priority={index === 0}
+              priority={index === 1}
             />
             <div className="slide-content-wrapper">
               <div className="slide-text-box">
@@ -194,7 +240,7 @@ const Slider = () => {
         {slides.map((_, index) => (
           <button
             key={index}
-            className={`dot ${index === current ? 'active' : ''}`}
+            className={`dot ${index === getRealIndex(current) ? 'active' : ''}`}
             onClick={() => goToSlide(index)}
           />
         ))}
