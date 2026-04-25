@@ -108,7 +108,7 @@ export default function ClientAuthWrapper() {
     <>
       <div className="menu-item">
         <a href="#" className="menu-link">
-          {isAuthenticated ? userName : 'Личный кабинет'} ▼
+          {isAuthenticated ? userName : 'Личный кабинет'}
         </a>
         <div className="dropdown-content">
           {isAuthenticated ? (
