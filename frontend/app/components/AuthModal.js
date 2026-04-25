@@ -17,7 +17,7 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
   const timerRef = useRef(null);
   const [isMounted, setIsMounted] = useState(false);
   const savedEmailRef = useRef('');
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const API_BASE_URL = 'https://матурин15.рф/api/v1';
 
   const setMessage = (message, isSuccess = false) => {
     setError(message);
@@ -234,7 +234,7 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
         body: JSON.stringify({
           code: verificationCode,
           email: email,
-          password: password,
+          new_password: password,
         }),
       });
 
@@ -495,11 +495,11 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
             </div>
           )}
 
-          {(isLogin || !isLogin) && (
-            <div className="auth-modal-field">
-              <label htmlFor="password">
-                {isForgotPassword ? 'Новый пароль' : 'Пароль'}
-              </label>
+          <div className="auth-modal-field">
+            <label htmlFor="password">
+              {isForgotPassword ? 'Новый пароль' : 'Пароль'}
+            </label>
+            <div className="password-field-wrapper">
               <input
                 id="password"
                 type="password"
@@ -510,21 +510,18 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
                 minLength={6}
                 disabled={isLoading}
               />
+              {isLogin && (
+                <button
+                  type="button"
+                  onClick={switchToForgotPassword}
+                  className="forgot-password-button"
+                  disabled={isLoading}
+                >
+                  Забыли пароль?
+                </button>
+              )}
             </div>
-          )}
-
-          {isLogin && (
-            <p className="auth-modal-forgot-password">
-              <button
-                type="button"
-                onClick={switchToForgotPassword}
-                className="auth-modal-switch-btn"
-                disabled={isLoading}
-              >
-                Забыли пароль?
-              </button>
-            </p>
-          )}
+          </div>
 
           {!isLogin && (
             <div className="auth-modal-field">
