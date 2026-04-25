@@ -13,11 +13,11 @@ export default function Header() {
             </div>
             <div className="mail">
               <Image src="/images/header/mail.svg" alt="Почта для связи" width={24} height={24}/>
-              <div>info@название</div>	
+              <div>ooo.maturin@gmail.com</div>	
             </div>
             <div className="geo">
               <div><Image src="/images/header/geo.svg" alt="Адрес" width={15} height={20}/></div>
-              <div>362003,РСО-Алания, г. Владикавказ, <br/> ул. Ардонская, дом 209, 2 этаж</div>
+              <div>362003,РСО-Алания, г. Владикавказ, <br/> ул. Гибизова, дом 10</div>
             </div>
             <div className="tele">
               <div><Image src="/images/header/tele.svg" alt="Телефон" width={21} height={21}/></div>
@@ -34,7 +34,7 @@ export default function Header() {
               <Link href="/" className="menu-link">Главная</Link>
             </div>
             <div className="menu-item">
-              <Link href="/software_catalogue" className="menu-link">Каталог оборудования и ПО</Link>
+              <Link href="/software_catalogue" className="menu-link">Оборудование и ПО</Link>
             </div>
             <div className="menu-item">
               <Link href="/services" className="menu-link">Услуги</Link>
