@@ -1,13 +1,17 @@
 package user
 
-import "time"
+import (
+	"time"
 
-type Role string
+	"github.com/sskotezhov/maturin/pkg/roles"
+)
+
+type Role = roles.Role
 
 const (
-	RoleAdmin   Role = "admin"
-	RoleManager Role = "manager"
-	RoleClient  Role = "client"
+	RoleAdmin   = roles.RoleAdmin
+	RoleManager = roles.RoleManager
+	RoleClient  = roles.RoleClient
 )
 
 type User struct {
