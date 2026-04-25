@@ -5,9 +5,8 @@ export default function SoftwareCatalogue() {
   return (
     <main>
       <Header />
-	  <div className="home-container">
-	  </div>
-	  <Footer />
+      <div className="home-container"></div>
+      <Footer />
     </main>
   );
 }

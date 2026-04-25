@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from 'react';
 import AuthModal from 'components/AuthModal';
 
 const API_BASE_URL = 'http://93.77.160.169/api/v1';
@@ -15,7 +15,7 @@ export default function ClientAuthWrapper() {
     if (typeof window !== 'undefined') {
       const accessToken = localStorage.getItem('access_token');
       const userStr = localStorage.getItem('user');
-      
+
       if (accessToken && userStr) {
         try {
           const user = JSON.parse(userStr);
@@ -34,15 +34,15 @@ export default function ClientAuthWrapper() {
 
   useEffect(() => {
     checkAuth();
-    
+
     const handleStorageChange = (e) => {
       if (e.key === 'access_token' || e.key === 'user') {
         checkAuth();
       }
     };
-    
+
     window.addEventListener('storage', handleStorageChange);
-    
+
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
@@ -55,9 +55,9 @@ export default function ClientAuthWrapper() {
 
   const callLogoutAPI = async () => {
     if (typeof window === 'undefined') return;
-    
+
     const refreshToken = localStorage.getItem('refresh_token');
-    
+
     if (!refreshToken) {
       console.log('Refresh token не найден, пропускаем API логаут');
       return;
@@ -67,11 +67,11 @@ export default function ClientAuthWrapper() {
       const response = await fetch(`${API_BASE_URL}/auth/logout`, {
         method: 'POST',
         headers: {
-          'accept': 'application/json',
+          accept: 'application/json',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          refresh_token: refreshToken
+          refresh_token: refreshToken,
         }),
       });
 
@@ -88,7 +88,7 @@ export default function ClientAuthWrapper() {
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
-    
+
     try {
       await callLogoutAPI();
     } finally {
@@ -97,7 +97,7 @@ export default function ClientAuthWrapper() {
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
       }
-      
+
       setIsAuthenticated(false);
       setUserName('');
       setIsLoggingOut(false);
@@ -124,7 +124,7 @@ export default function ClientAuthWrapper() {
                   cursor: isLoggingOut ? 'wait' : 'pointer',
                   width: '100%',
                   textAlign: 'left',
-                  opacity: isLoggingOut ? 0.7 : 1
+                  opacity: isLoggingOut ? 0.7 : 1,
                 }}
               >
                 {isLoggingOut ? 'Выход...' : 'Выйти'}
@@ -142,8 +142,8 @@ export default function ClientAuthWrapper() {
         </div>
       </div>
 
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
+      <AuthModal
+        isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         onAuthSuccess={handleAuthSuccess}
       />

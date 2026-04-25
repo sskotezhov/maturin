@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 
 const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirmed, setPasswordConfirmed] = useState('');
@@ -16,7 +17,6 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
   const timerRef = useRef(null);
   const [isMounted, setIsMounted] = useState(false);
   const savedEmailRef = useRef('');
-
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   const setMessage = (message, isSuccess = false) => {
@@ -92,15 +92,19 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
       return;
     }
 
+    const endpoint = isForgotPassword
+      ? '/auth/forgot-password'
+      : '/auth/register';
+
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
-          'accept': 'application/json',
+          accept: 'application/json',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: currentEmail
+          email: currentEmail,
         }),
       });
 
@@ -112,7 +116,10 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
         setMessage('Код подтверждения отправлен на email', true);
         setEmail(currentEmail);
       } else {
-        setMessage(data.message || data.detail || 'Ошибка при отправке кода', false);
+        setMessage(
+          data.message || data.detail || 'Ошибка при отправке кода',
+          false
+        );
         setEmail(currentEmail);
       }
     } catch (error) {
@@ -136,15 +143,19 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
       return;
     }
 
+    const endpoint = isForgotPassword
+      ? '/auth/forgot-password'
+      : '/auth/register';
+
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
-          'accept': 'application/json',
+          accept: 'application/json',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: currentEmail
+          email: currentEmail,
         }),
       });
 
@@ -155,7 +166,10 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
         setMessage('Код подтверждения отправлен повторно', true);
         setEmail(currentEmail);
       } else {
-        setMessage(data.message || data.detail || 'Ошибка при повторной отправке кода', false);
+        setMessage(
+          data.message || data.detail || 'Ошибка при повторной отправке кода',
+          false
+        );
         setEmail(currentEmail);
       }
     } catch (error) {
@@ -172,13 +186,13 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
       const response = await fetch(`${API_BASE_URL}/auth/verify-email`, {
         method: 'POST',
         headers: {
-          'accept': 'application/json',
+          accept: 'application/json',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           code: verificationCode,
           email: email,
-          password: password
+          password: password,
         }),
       });
 
@@ -186,15 +200,57 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
 
       if (response.ok) {
         setAuthTokens(data.access_token, data.refresh_token, data.user);
-        
+
         if (onAuthSuccess) {
           onAuthSuccess(data);
         }
-        
+
         savedEmailRef.current = '';
         onClose();
       } else {
-        setMessage(data.message || data.detail || 'Ошибка при подтверждении регистрации', false);
+        setMessage(
+          data.message || data.detail || 'Ошибка при подтверждении регистрации',
+          false
+        );
+        setEmail(email);
+      }
+    } catch (error) {
+      setMessage('Ошибка соединения с сервером', false);
+      setEmail(email);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code: verificationCode,
+          email: email,
+          password: password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage('Пароль успешно изменен', true);
+
+        setTimeout(() => {
+          switchToLogin();
+        }, 2000);
+      } else {
+        setMessage(
+          data.message || data.detail || 'Ошибка при сбросе пароля',
+          false
+        );
         setEmail(email);
       }
     } catch (error) {
@@ -211,12 +267,12 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
-          'accept': 'application/json',
+          accept: 'application/json',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           email: email,
-          password: password
+          password: password,
         }),
       });
 
@@ -228,11 +284,14 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
         if (onAuthSuccess) {
           onAuthSuccess(data);
         }
-        
+
         savedEmailRef.current = '';
         onClose();
       } else {
-        setMessage(data.message || data.detail || 'Неверный email или пароль', false);
+        setMessage(
+          data.message || data.detail || 'Неверный email или пароль',
+          false
+        );
         setEmail(email);
       }
     } catch (error) {
@@ -248,6 +307,30 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
     setMessage('');
     setIsLoading(true);
 
+    if (isForgotPassword) {
+      if (!verificationCode) {
+        setMessage('Введите код подтверждения', false);
+        setIsLoading(false);
+        return;
+      }
+
+      if (password !== passwordConfirmed) {
+        setMessage('Пароли не совпадают', false);
+        setIsLoading(false);
+        return;
+      }
+
+      if (password.length < 8) {
+        setMessage('Пароль должен содержать минимум 8 символов', false);
+        setIsLoading(false);
+        return;
+      }
+
+      await handleResetPassword();
+      setIsLoading(false);
+      return;
+    }
+
     if (!isLogin && !verificationCode) {
       setMessage('Введите код подтверждения', false);
       setIsLoading(false);
@@ -260,8 +343,8 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
       return;
     }
 
-    if (!isLogin && password.length < 6) {
-      setMessage('Пароль должен содержать минимум 6 символов', false);
+    if (!isLogin && password.length < 8) {
+      setMessage('Пароль должен содержать минимум 8 символов', false);
       setIsLoading(false);
       return;
     }
@@ -271,12 +354,37 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
     } else {
       await handleVerifyEmail();
     }
-    
+
     setIsLoading(false);
   };
 
   const switchMode = () => {
     setIsLogin(!isLogin);
+    setIsForgotPassword(false);
+    setPassword('');
+    setPasswordConfirmed('');
+    setVerificationCode('');
+    setMessage('');
+    setCodeSent(false);
+    setTimer(0);
+    clearInterval(timerRef.current);
+  };
+
+  const switchToForgotPassword = () => {
+    setIsForgotPassword(true);
+    setIsLogin(false);
+    setPassword('');
+    setPasswordConfirmed('');
+    setVerificationCode('');
+    setMessage('');
+    setCodeSent(false);
+    setTimer(0);
+    clearInterval(timerRef.current);
+  };
+
+  const switchToLogin = () => {
+    setIsLogin(true);
+    setIsForgotPassword(false);
     setPassword('');
     setPasswordConfirmed('');
     setVerificationCode('');
@@ -287,7 +395,7 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
   };
 
   if (!isOpen) return null;
-  
+
   if (!isMounted) {
     return (
       <div className="auth-modal-overlay" onClick={onClose}>
@@ -300,20 +408,32 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
     );
   }
 
+  const title = isForgotPassword
+    ? 'Восстановление пароля'
+    : isLogin
+      ? 'Вход'
+      : 'Регистрация';
+
+  const submitButtonText = isLoading
+    ? 'Загрузка...'
+    : isForgotPassword
+      ? 'Сбросить пароль'
+      : isLogin
+        ? 'Войти'
+        : 'Зарегистрироваться';
+
   return (
     <div className="auth-modal-overlay">
       <div className="auth-modal" onClick={(e) => e.stopPropagation()}>
-        <button 
-          className="auth-modal-close" 
+        <button
+          className="auth-modal-close"
           onClick={onClose}
           aria-label="Закрыть окно"
         >
           &times;
         </button>
 
-        <h2 className="auth-modal-title">
-          {isLogin ? 'Вход' : 'Регистрация'}
-        </h2>
+        <h2 className="auth-modal-title">{title}</h2>
 
         <form onSubmit={handleSubmit} className="auth-modal-form">
           <div className="auth-modal-field">
@@ -328,7 +448,7 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
               disabled={isLoading}
             />
           </div>
-          
+
           {!isLogin && (
             <div className="auth-modal-field">
               <label htmlFor="verification-code">Код подтверждения</label>
@@ -342,54 +462,77 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
                   disabled={isLoading}
                 />
                 {!codeSent ? (
-                  <button 
+                  <button
                     type="button"
-                    className="send-code-button" 
+                    className="send-code-button"
                     onClick={handleSendCode}
                     disabled={isLoading}
                   >
                     {isLoading ? 'Отправка...' : 'Получить код подтверждения'}
                   </button>
                 ) : (
-                  <button 
+                  <button
                     type="button"
-                    className="send-code-button" 
+                    className="send-code-button"
                     onClick={handleResendCode}
                     disabled={timer > 0 || isLoading}
                     style={{
                       color: timer > 0 ? '#9CA3AF' : '',
                       textDecoration: timer > 0 ? 'none' : 'underline',
-                      cursor: timer > 0 || isLoading ? 'not-allowed' : 'pointer',
-                      opacity: timer > 0 || isLoading ? 0.7 : 1
+                      cursor:
+                        timer > 0 || isLoading ? 'not-allowed' : 'pointer',
+                      opacity: timer > 0 || isLoading ? 0.7 : 1,
                     }}
                   >
-                    {timer > 0 
-                      ? `Повторная отправка через ${timer} сек` 
-                      : isLoading ? 'Отправка...' : 'Отправить код повторно'
-                    }
+                    {timer > 0
+                      ? `Повторная отправка через ${timer} сек`
+                      : isLoading
+                        ? 'Отправка...'
+                        : 'Отправить код повторно'}
                   </button>
                 )}
               </div>
             </div>
           )}
 
-          <div className="auth-modal-field">
-            <label htmlFor="password">Пароль</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-              minLength={6}
-              disabled={isLoading}
-            />
-          </div>
-          
+          {(isLogin || !isLogin) && (
+            <div className="auth-modal-field">
+              <label htmlFor="password">
+                {isForgotPassword ? 'Новый пароль' : 'Пароль'}
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                minLength={6}
+                disabled={isLoading}
+              />
+            </div>
+          )}
+
+          {isLogin && (
+            <p className="auth-modal-forgot-password">
+              <button
+                type="button"
+                onClick={switchToForgotPassword}
+                className="auth-modal-switch-btn"
+                disabled={isLoading}
+              >
+                Забыли пароль?
+              </button>
+            </p>
+          )}
+
           {!isLogin && (
             <div className="auth-modal-field">
-              <label htmlFor="passwordConfirmed">Подтверждение пароля</label>
+              <label htmlFor="passwordConfirmed">
+                {isForgotPassword
+                  ? 'Подтвердите новый пароль'
+                  : 'Подтверждение пароля'}
+              </label>
               <input
                 id="passwordConfirmed"
                 type="password"
@@ -404,28 +547,45 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
           )}
 
           {error && (
-            <p 
+            <p
               className={`auth-modal-message ${isSuccessMessage ? 'success-message' : 'error-message'}`}
             >
               {error}
             </p>
           )}
 
-          <button type="submit" className="auth-modal-submit" disabled={isLoading}>
-            {isLoading ? 'Загрузка...' : (isLogin ? 'Войти' : 'Зарегистрироваться')}
+          <button
+            type="submit"
+            className="auth-modal-submit"
+            disabled={isLoading}
+          >
+            {submitButtonText}
           </button>
         </form>
 
         <p className="auth-modal-switch-text">
-          {isLogin ? 'Нет аккаунта?' : 'Уже есть аккаунт?'}{' '}
-          <button 
-            type="button"
-            onClick={switchMode} 
-            className="auth-modal-switch-btn"
-            disabled={isLoading}
-          >
-            {isLogin ? 'Создать' : 'Войти'}
-          </button>
+          {isForgotPassword ? (
+            <button
+              type="button"
+              onClick={switchToLogin}
+              className="auth-modal-switch-btn"
+              disabled={isLoading}
+            >
+              Вернуться ко входу
+            </button>
+          ) : (
+            <>
+              {isLogin ? 'Нет аккаунта?' : 'Уже есть аккаунт?'}{' '}
+              <button
+                type="button"
+                onClick={switchMode}
+                className="auth-modal-switch-btn"
+                disabled={isLoading}
+              >
+                {isLogin ? 'Создать' : 'Войти'}
+              </button>
+            </>
+          )}
         </p>
       </div>
     </div>

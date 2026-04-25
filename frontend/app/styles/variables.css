@@ -1,9 +1,9 @@
 :root {
-	--color-black: #333333;
-	--color-purple: #6644aa;
-	--color-orange: #fd6e61;
-	--color-white: #ffffff;
-	--color-blue: rgba(69, 70, 236, 1);
-	--color-black-purple: rgba(82, 55, 144, 1);
-	--color-red: rgba(255, 45, 45, 1);
+  --color-black: #333333;
+  --color-purple: #6644aa;
+  --color-orange: #fd6e61;
+  --color-white: #ffffff;
+  --color-blue: rgba(69, 70, 236, 1);
+  --color-black-purple: rgba(82, 55, 144, 1);
+  --color-red: rgba(255, 45, 45, 1);
 }
