@@ -66,24 +66,23 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - backend
+      - frontend
   # ─── frontend ───────────────────────────────────────────────────────────────
   frontend:
-    build: 
+    build:
       dockerfile: Dockerfile
       context: ./frontend
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
+    restart: unless-stopped
     environment:
-      - NEXT_PUBLIC_API_BASE_URL=http://93.77.160.169/api/v1
-    command: npm run dev
+      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:
