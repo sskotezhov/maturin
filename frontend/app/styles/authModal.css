@@ -1,3 +1,4 @@
+/* Существующие стили */
 .auth-modal-overlay {
   position: fixed;
   top: 0;
@@ -87,19 +88,122 @@
   color: var(--color-black);
 }
 
-.auth-modal-field .send-code-button {
-  text-align: left;
-  border: 0px;
+.password-field-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.password-field-wrapper input {
+  padding: 14px 16px;
+  font-size: 16px;
+  border: 2px solid rgba(102, 68, 170, 0.15);
+  border-radius: 14px;
+  outline: none;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
   background-color: var(--color-white);
+  color: var(--color-black);
+}
+
+.password-field-wrapper input:focus {
+  border-color: var(--color-purple);
+  box-shadow: 0 0 0 3px rgba(102, 68, 170, 0.1);
+}
+
+.password-field-wrapper input::placeholder {
+  color: var(--color-black);
+  opacity: 0.4;
+}
+
+.forgot-password-button {
+  align-self: flex-start;
+  background: none;
+  border: none;
   color: var(--color-black-purple);
-  text-decoration: underline;
-  font-weight: bold;
+  font-weight: 600;
+  font-size: 13px;
   cursor: pointer;
-  transition: transform 0.1s ease;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.2s;
+}
+
+.forgot-password-button:hover {
+  color: var(--color-purple);
+}
+
+.forgot-password-button:active {
+  transform: scale(0.95);
+}
+
+.forgot-password-button:disabled {
+  color: var(--color-black);
+  opacity: 0.4;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.verification-field-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.verification-field-wrapper input {
+  padding: 14px 16px;
+  font-size: 16px;
+  border: 2px solid rgba(102, 68, 170, 0.15);
+  border-radius: 14px;
+  outline: none;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+  background-color: var(--color-white);
+  color: var(--color-black);
+}
+
+.verification-field-wrapper input:focus {
+  border-color: var(--color-purple);
+  box-shadow: 0 0 0 3px rgba(102, 68, 170, 0.1);
+}
+
+.verification-field-wrapper input::placeholder {
+  color: var(--color-black);
+  opacity: 0.4;
+}
+
+.auth-modal-field .send-code-button {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--color-black-purple);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition:
+    color 0.2s,
+    transform 0.1s ease;
+}
+
+.auth-modal-field .send-code-button:hover {
+  color: var(--color-purple);
 }
 
 .auth-modal-field .send-code-button:active {
   transform: scale(0.95);
+}
+
+.auth-modal-field .send-code-button:disabled {
+  color: var(--color-black);
+  opacity: 0.7;
+  cursor: not-allowed;
+  text-decoration: none;
 }
 
 .auth-modal-field input:focus {
