@@ -68,6 +68,40 @@ definitions:
       password:
         type: string
     type: object
+  user.profileResponse:
+    properties:
+      company_name:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: integer
+      inn:
+        type: string
+      last_name:
+        type: string
+      middle_name:
+        type: string
+      phone:
+        type: string
+      role:
+        type: string
+      telegram:
+        type: string
+    type: object
+  user.updateProfileRequest:
+    properties:
+      mask:
+        items:
+          type: string
+        type: array
+      values:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
 host: 93.77.160.169
 info:
   contact: {}
@@ -375,6 +409,60 @@ paths:
       summary: Verify email and complete registration
       tags:
       - auth
+  /user/me:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.profileResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get current user profile
+      tags:
+      - user
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Mask and values
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/user.updateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.profileResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update current user profile
+      tags:
+      - user
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and the access token

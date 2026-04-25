@@ -13,6 +13,7 @@ import (
 	"github.com/sskotezhov/maturin/internal/auth"
 	"github.com/sskotezhov/maturin/internal/user"
 	"github.com/sskotezhov/maturin/pkg/email"
+	mw "github.com/sskotezhov/maturin/pkg/middleware"
 )
 
 type App struct {
@@ -66,8 +67,13 @@ func New(cfg *config.Config, db *gorm.DB, rdb *redis.Client) (*App, error) {
 	//swagger генерю доки в /docs
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
+	userSvc := user.NewService(userRepo)
+
 	api := e.Group("/api/v1")
 	auth.NewHandler(authSvc).Register(api.Group("/auth"))
+
+	authed := api.Group("", mw.JWTAuth(jwtCfg.Secret))
+	user.NewHandler(userSvc).Register(authed.Group("/user"))
 
 	return &App{
 		Echo:   e,
