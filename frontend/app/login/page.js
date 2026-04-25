@@ -7,9 +7,9 @@ export default function LoginPage() {
   return (
     <main>
       <Header />
-	  <div className="home-container">
-		  <Partners />
-	  </div>
+      <div className="home-container">
+        <Partners />
+      </div>
     </main>
   );
 }

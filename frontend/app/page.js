@@ -7,11 +7,11 @@ export default function HomePage() {
   return (
     <main>
       <Header />
-	  <Slider />
-	  <div className="home-container">
-		  <Partners />
-	  </div>
-	  <Footer />
+      <Slider />
+      <div className="home-container">
+        <Partners />
+      </div>
+      <Footer />
     </main>
   );
 }
