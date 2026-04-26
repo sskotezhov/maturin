@@ -122,7 +122,6 @@ func (r *oneCRepository) fetchAndJoin(ctx context.Context) ([]Product, error) {
 
 	g.Go(func() error {
 		params := url.Values{}
-		params.Set("$filter", "ВидЦен_Key eq guid'"+RetailPriceTypeKey+"'")
 		params.Set("$select", "Номенклатура_Key,ВидЦен_Key,Period,Цена")
 		items, err := r.client.Fetch(gctx, "InformationRegister_ЦеныНоменклатуры", params)
 		if err != nil {
@@ -199,6 +198,9 @@ func (r *oneCRepository) fetchCategories(ctx context.Context) ([]Category, error
 func join(products []oneCProduct, prices []oneCPrice, categories []oneCCategory, stocks []oneCStockBalance) []Product {
 	latestPrice := make(map[string]oneCPrice, len(prices))
 	for _, p := range prices {
+		if p.PriceTypeKey != RetailPriceTypeKey {
+			continue
+		}
 		if existing, ok := latestPrice[p.NomenclatureKey]; !ok || p.Period > existing.Period {
 			latestPrice[p.NomenclatureKey] = p
 		}
