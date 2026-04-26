@@ -122,8 +122,8 @@ func (r *oneCRepository) fetchAndJoin(ctx context.Context) ([]Product, error) {
 
 	g.Go(func() error {
 		params := url.Values{}
-		params.Set("$filter", "ВидЦены_Key eq guid'"+RetailPriceTypeKey+"'")
-		params.Set("$select", "Номенклатура_Key,ВидЦены_Key,Period,Цена")
+		params.Set("$filter", "ВидЦен_Key eq guid'"+RetailPriceTypeKey+"'")
+		params.Set("$select", "Номенклатура_Key,ВидЦен_Key,Period,Цена")
 		items, err := r.client.Fetch(gctx, "InformationRegister_ЦеныНоменклатуры", params)
 		if err != nil {
 			return err
