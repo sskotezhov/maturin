@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -113,6 +114,7 @@ func (h *Handler) register(c echo.Context) error {
 		case errors.Is(err, ErrEmailAlreadyTaken):
 			return c.JSON(http.StatusConflict, echo.Map{"error": err.Error()})
 		default:
+			slog.Error("register failed", "email", req.Email, "err", err)
 			return c.JSON(http.StatusInternalServerError, echo.Map{"error": "internal error"})
 		}
 	}
@@ -144,6 +146,7 @@ func (h *Handler) verifyEmail(c echo.Context) error {
 		case errors.Is(err, ErrWeakPassword):
 			return c.JSON(http.StatusBadRequest, echo.Map{"error": err.Error()})
 		default:
+			slog.Error("verify email failed", "email", req.Email, "err", err)
 			return c.JSON(http.StatusInternalServerError, echo.Map{"error": "internal error"})
 		}
 	}
@@ -170,6 +173,7 @@ func (h *Handler) resendVerification(c echo.Context) error {
 		if errors.Is(err, ErrInvalidCredentials) {
 			return c.JSON(http.StatusUnauthorized, echo.Map{"error": err.Error()})
 		}
+		slog.Error("resend verification failed", "email", req.Email, "err", err)
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "internal error"})
 	}
 
@@ -200,6 +204,7 @@ func (h *Handler) login(c echo.Context) error {
 		case errors.Is(err, ErrEmailNotVerified):
 			return c.JSON(http.StatusForbidden, echo.Map{"error": err.Error()})
 		default:
+			slog.Error("login failed", "email", req.Email, "err", err)
 			return c.JSON(http.StatusInternalServerError, echo.Map{"error": "internal error"})
 		}
 	}
@@ -250,6 +255,7 @@ func (h *Handler) forgotPassword(c echo.Context) error {
 	}
 
 	if err := h.svc.ForgotPassword(c.Request().Context(), req.Email); err != nil {
+		slog.Error("forgot password failed", "email", req.Email, "err", err)
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "internal error"})
 	}
 
