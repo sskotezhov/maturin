@@ -29,18 +29,23 @@ type Category struct {
 	Name string `json:"name"`
 }
 
+type oneCExpandedCategory struct {
+	Description string `json:"Description"`
+}
+
 type oneCProduct struct {
-	RefKey       string `json:"Ref_Key"`
-	Code         string `json:"Code"`
-	Description  string `json:"Description"`
-	FullName     string `json:"НаименованиеПолное"`
-	Article      string `json:"Артикул"`
-	CategoryKey  string `json:"КатегорияНоменклатуры_Key"`
-	Type         string `json:"ТипНоменклатуры"`
-	VAT          string `json:"ВидСтавкиНДС"`
-	UpdatedAt    string `json:"ДатаИзменения"`
-	IsFolder     bool   `json:"IsFolder"`
-	DeletionMark bool   `json:"DeletionMark"`
+	RefKey           string                `json:"Ref_Key"`
+	Code             string                `json:"Code"`
+	Description      string                `json:"Description"`
+	FullName         string                `json:"НаименованиеПолное"`
+	Article          string                `json:"Артикул"`
+	CategoryKey      string                `json:"КатегорияНоменклатуры_Key"`
+	CategoryExpanded *oneCExpandedCategory `json:"КатегорияНоменклатуры"`
+	Type             string                `json:"ТипНоменклатуры"`
+	VAT              string                `json:"ВидСтавкиНДС"`
+	UpdatedAt        string                `json:"ДатаИзменения"`
+	IsFolder         bool                  `json:"IsFolder"`
+	DeletionMark     bool                  `json:"DeletionMark"`
 }
 
 type oneCPrice struct {
