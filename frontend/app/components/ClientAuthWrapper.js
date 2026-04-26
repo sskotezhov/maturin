@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import AuthModal from 'components/AuthModal';
 
-const API_BASE_URL = 'http://93.77.160.169/api/v1';
+const API_BASE_URL = 'https://матурин15.рф/api/v1';
 
 export default function ClientAuthWrapper() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
