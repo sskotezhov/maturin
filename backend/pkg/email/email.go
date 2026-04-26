@@ -91,7 +91,7 @@ func buildEmailHTML(title, description, code, disclaimer string) string {
           <!-- Footer -->
           <tr>
             <td style="background-color:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center;">
-              <p style="margin:0;font-size:12px;color:#9ca3af;">© 2025 Матурин — программы и оборудование</p>
+              <p style="margin:0;font-size:12px;color:#9ca3af;">© 2026 Матурин — программы и оборудование</p>
             </td>
           </tr>
 

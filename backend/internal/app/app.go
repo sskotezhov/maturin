@@ -1,6 +1,8 @@
 package app
 
 import (
+	"context"
+	"log"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -11,9 +13,11 @@ import (
 
 	"github.com/sskotezhov/maturin/config"
 	"github.com/sskotezhov/maturin/internal/auth"
+	"github.com/sskotezhov/maturin/internal/product"
 	"github.com/sskotezhov/maturin/internal/user"
 	"github.com/sskotezhov/maturin/pkg/email"
 	mw "github.com/sskotezhov/maturin/pkg/middleware"
+	"github.com/sskotezhov/maturin/pkg/onec"
 )
 
 type App struct {
@@ -42,11 +46,12 @@ func New(cfg *config.Config, db *gorm.DB, rdb *redis.Client) (*App, error) {
 
 	jwtCfg := cfg.Maturin.JWT
 	smtpCfg := cfg.Maturin.SMTP
+	oneCCfg := cfg.Maturin.OneC
 
-	//user
+	// user
 	userRepo := user.NewRepository(db)
 
-	//email
+	// email
 	emailSender := email.NewSender(email.Config{
 		Host:     smtpCfg.Host,
 		Port:     smtpCfg.Port,
@@ -54,7 +59,7 @@ func New(cfg *config.Config, db *gorm.DB, rdb *redis.Client) (*App, error) {
 		Password: smtpCfg.Password,
 	})
 
-	//auth
+	// auth
 	authSvc := auth.NewService(
 		userRepo,
 		rdb,
@@ -64,16 +69,33 @@ func New(cfg *config.Config, db *gorm.DB, rdb *redis.Client) (*App, error) {
 		time.Duration(jwtCfg.RefreshTokenTTL)*time.Minute,
 	)
 
-	//swagger генерю доки в /docs
+	// product
+	oneCClient := onec.NewClient(oneCCfg.BaseURL, oneCCfg.User, oneCCfg.Password)
+	productRepo := product.NewRepository(oneCClient, rdb, time.Duration(oneCCfg.CacheTTLMin)*time.Minute)
+	productSvc := product.NewService(productRepo)
+	productHandler := product.NewHandler(productSvc)
+
+	// swagger
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	userSvc := user.NewService(userRepo)
 
 	api := e.Group("/api/v1")
 	auth.NewHandler(authSvc).Register(api.Group("/auth"))
+	productHandler.Register(api.Group("/products"))
+	productHandler.RegisterCategories(api.Group("/categories"))
 
 	authed := api.Group("", mw.JWTAuth(jwtCfg.Secret))
 	user.NewHandler(userSvc).Register(authed.Group("/user"))
+
+	// прогрев кеша в фоне
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+		if _, err := productRepo.GetAll(ctx); err != nil {
+			log.Printf("catalog warmup error: %v", err)
+		}
+	}()
 
 	return &App{
 		Echo:   e,

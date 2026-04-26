@@ -12,6 +12,7 @@ type AppConfig struct {
 	Redis    RedisConfig    `yaml:"redis"`
 	JWT      JWTConfig      `yaml:"jwt"`
 	SMTP     SMTPConfig     `yaml:"smtp"`
+	OneC     OneCConfig     `yaml:"one_c"`
 }
 
 type ServerConfig struct {
@@ -44,6 +45,13 @@ type SMTPConfig struct {
 	Port     int    `yaml:"port"     env:"SMTP_PORT"     env-default:"465"`
 	User     string `yaml:"user"     env:"SMTP_USER"     env-default:"noreply@imaginelipa.ru"`
 	Password string `env:"SMTP_PASSWORD" env-required:"true"`
+}
+
+type OneCConfig struct {
+	BaseURL     string `env:"OC_BASE_URL"      env-required:"true"`
+	User        string `env:"OC_USER"          env-required:"true"`
+	Password    string `env:"OC_PASSWORD"      env-required:"true"`
+	CacheTTLMin int    `yaml:"cache_ttl_min"   env:"OC_CACHE_TTL_MIN" env-default:"30"`
 }
 
 func Load(path string) (*Config, error) {
