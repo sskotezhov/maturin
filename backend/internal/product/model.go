@@ -45,7 +45,7 @@ type oneCProduct struct {
 
 type oneCPrice struct {
 	NomenclatureKey string  `json:"Номенклатура_Key"`
-	PriceTypeKey    string  `json:"ВидЦены_Key"`
+	PriceTypeKey    string  `json:"ВидЦен_Key"`
 	Period          string  `json:"Period"`
 	Price           float64 `json:"Цена"`
 }
