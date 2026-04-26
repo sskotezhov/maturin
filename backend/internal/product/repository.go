@@ -104,7 +104,6 @@ func (r *oneCRepository) fetchAndJoin(ctx context.Context) ([]Product, error) {
 
 	g.Go(func() error {
 		params := url.Values{}
-		params.Set("$filter", "IsFolder eq false and DeletionMark eq false")
 		params.Set("$select", "Ref_Key,Code,Description,НаименованиеПолное,Артикул,КатегорияНоменклатуры_Key,ТипНоменклатуры,ВидСтавкиНДС,ДатаИзменения,IsFolder,DeletionMark")
 		items, err := r.client.Fetch(gctx, "Catalog_Номенклатура", params)
 		if err != nil {
@@ -113,7 +112,7 @@ func (r *oneCRepository) fetchAndJoin(ctx context.Context) ([]Product, error) {
 		rawProducts = make([]oneCProduct, 0, len(items))
 		for _, raw := range items {
 			var p oneCProduct
-			if err := json.Unmarshal(raw, &p); err == nil {
+			if err := json.Unmarshal(raw, &p); err == nil && !p.IsFolder && !p.DeletionMark {
 				rawProducts = append(rawProducts, p)
 			}
 		}
