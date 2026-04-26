@@ -43,7 +43,7 @@ func (s *Sender) SendPasswordResetCode(to, code string) error {
 
 func (s *Sender) send(to, subject, htmlBody string) error {
 	m := gomail.NewMessage()
-	m.SetHeader("From", fmt.Sprintf("Матурин <%s>", s.cfg.User))
+	m.SetHeader("From", s.cfg.User)
 	m.SetHeader("To", to)
 	m.SetHeader("Subject", subject)
 	m.SetBody("text/html", htmlBody)
