@@ -13,6 +13,7 @@ import (
 
 	"github.com/sskotezhov/maturin/config"
 	"github.com/sskotezhov/maturin/internal/auth"
+	"github.com/sskotezhov/maturin/internal/order"
 	"github.com/sskotezhov/maturin/internal/product"
 	"github.com/sskotezhov/maturin/internal/user"
 	"github.com/sskotezhov/maturin/pkg/email"
@@ -80,6 +81,11 @@ func New(cfg *config.Config, db *gorm.DB, rdb *redis.Client) (*App, error) {
 
 	userSvc := user.NewService(userRepo)
 
+	// order, частный случай у меня draft - cart
+	cartRepo := order.NewRepository(db)
+	cartSvc := order.NewService(cartRepo, userRepo, emailSender, rdb)
+	cartHandler := order.NewHandler(cartSvc)
+
 	api := e.Group("/api/v1")
 	auth.NewHandler(authSvc).Register(api.Group("/auth"))
 	productHandler.Register(api.Group("/products"))
@@ -87,6 +93,8 @@ func New(cfg *config.Config, db *gorm.DB, rdb *redis.Client) (*App, error) {
 
 	authed := api.Group("", mw.JWTAuth(jwtCfg.Secret))
 	user.NewHandler(userSvc).Register(authed.Group("/user"))
+	cartHandler.RegisterCart(authed.Group("/cart"))
+	cartHandler.RegisterOrders(authed.Group("/orders"))
 
 	// прогрев кеша в фоне
 	go func() {
@@ -106,5 +114,8 @@ func New(cfg *config.Config, db *gorm.DB, rdb *redis.Client) (*App, error) {
 }
 
 func migrate(db *gorm.DB) error {
-	return user.Migrate(db)
+	if err := user.Migrate(db); err != nil {
+		return err
+	}
+	return order.Migrate(db)
 }
