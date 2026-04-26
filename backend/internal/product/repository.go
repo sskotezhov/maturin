@@ -3,6 +3,7 @@ package product
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/url"
 	"time"
 
@@ -42,14 +43,19 @@ func (r *oneCRepository) GetAll(ctx context.Context) ([]Product, error) {
 	if err == nil {
 		var products []Product
 		if err := json.Unmarshal(cached, &products); err == nil {
+			slog.Info("catalog: cache hit", "count", len(products))
 			return products, nil
 		}
 	}
 
+	slog.Info("catalog: cache miss, fetching from 1C")
 	products, err := r.fetchAndJoin(ctx)
 	if err != nil {
+		slog.Error("catalog: fetch failed", "err", err)
 		return nil, err
 	}
+
+	slog.Info("catalog: fetch complete", "count", len(products))
 
 	if data, err := json.Marshal(products); err == nil {
 		r.rdb.Set(ctx, cacheKeyAll, data, r.cacheTTL)
@@ -76,14 +82,19 @@ func (r *oneCRepository) GetCategories(ctx context.Context) ([]Category, error) 
 	if err == nil {
 		var cats []Category
 		if err := json.Unmarshal(cached, &cats); err == nil {
+			slog.Info("categories: cache hit", "count", len(cats))
 			return cats, nil
 		}
 	}
 
+	slog.Info("categories: cache miss, fetching from 1C")
 	cats, err := r.fetchCategories(ctx)
 	if err != nil {
+		slog.Error("categories: fetch failed", "err", err)
 		return nil, err
 	}
+
+	slog.Info("categories: fetch complete", "count", len(cats))
 
 	if data, err := json.Marshal(cats); err == nil {
 		r.rdb.Set(ctx, cacheKeyCategories, data, r.cacheTTL)
@@ -107,6 +118,7 @@ func (r *oneCRepository) fetchAndJoin(ctx context.Context) ([]Product, error) {
 		params.Set("$select", "Ref_Key,Code,Description,НаименованиеПолное,Артикул,КатегорияНоменклатуры_Key,ТипНоменклатуры,ВидСтавкиНДС,ДатаИзменения,IsFolder,DeletionMark")
 		items, err := r.client.Fetch(gctx, "Catalog_Номенклатура", params)
 		if err != nil {
+			slog.Error("1C: Catalog_Номенклатура failed", "err", err)
 			return err
 		}
 		rawProducts = make([]oneCProduct, 0, len(items))
@@ -116,6 +128,7 @@ func (r *oneCRepository) fetchAndJoin(ctx context.Context) ([]Product, error) {
 				rawProducts = append(rawProducts, p)
 			}
 		}
+		slog.Info("1C: Catalog_Номенклатура fetched", "total", len(items), "filtered", len(rawProducts))
 		return nil
 	})
 
@@ -124,6 +137,7 @@ func (r *oneCRepository) fetchAndJoin(ctx context.Context) ([]Product, error) {
 		params.Set("$select", "Номенклатура_Key,ВидЦен_Key,Period,Цена")
 		items, err := r.client.Fetch(gctx, "InformationRegister_ЦеныНоменклатуры", params)
 		if err != nil {
+			slog.Error("1C: InformationRegister_ЦеныНоменклатуры failed", "err", err)
 			return err
 		}
 		rawPrices = make([]oneCPrice, 0, len(items))
@@ -133,6 +147,7 @@ func (r *oneCRepository) fetchAndJoin(ctx context.Context) ([]Product, error) {
 				rawPrices = append(rawPrices, p)
 			}
 		}
+		slog.Info("1C: ЦеныНоменклатуры fetched", "count", len(rawPrices))
 		return nil
 	})
 
@@ -141,6 +156,7 @@ func (r *oneCRepository) fetchAndJoin(ctx context.Context) ([]Product, error) {
 		params.Set("$select", "Ref_Key,Description")
 		items, err := r.client.Fetch(gctx, "Catalog_КатегорииНоменклатуры", params)
 		if err != nil {
+			slog.Error("1C: Catalog_КатегорииНоменклатуры failed", "err", err)
 			return err
 		}
 		rawCategories = make([]oneCCategory, 0, len(items))
@@ -150,6 +166,7 @@ func (r *oneCRepository) fetchAndJoin(ctx context.Context) ([]Product, error) {
 				rawCategories = append(rawCategories, c)
 			}
 		}
+		slog.Info("1C: КатегорииНоменклатуры fetched", "count", len(rawCategories))
 		return nil
 	})
 
@@ -158,6 +175,7 @@ func (r *oneCRepository) fetchAndJoin(ctx context.Context) ([]Product, error) {
 		params.Set("$select", "Номенклатура_Key,КоличествоBalance")
 		items, err := r.client.Fetch(gctx, "AccumulationRegister_Запасы/Balance", params)
 		if err != nil {
+			slog.Error("1C: AccumulationRegister_Запасы/Balance failed", "err", err)
 			return err
 		}
 		rawStocks = make([]oneCStockBalance, 0, len(items))
@@ -167,6 +185,7 @@ func (r *oneCRepository) fetchAndJoin(ctx context.Context) ([]Product, error) {
 				rawStocks = append(rawStocks, s)
 			}
 		}
+		slog.Info("1C: Запасы/Balance fetched", "count", len(rawStocks))
 		return nil
 	})
 
@@ -174,7 +193,9 @@ func (r *oneCRepository) fetchAndJoin(ctx context.Context) ([]Product, error) {
 		return nil, err
 	}
 
-	return join(rawProducts, rawPrices, rawCategories, rawStocks), nil
+	result := join(rawProducts, rawPrices, rawCategories, rawStocks)
+	slog.Info("catalog: join complete", "products", len(result))
+	return result, nil
 }
 
 func (r *oneCRepository) fetchCategories(ctx context.Context) ([]Category, error) {
