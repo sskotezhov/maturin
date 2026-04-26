@@ -186,7 +186,6 @@ func (s *service) Logout(ctx context.Context, refreshToken string) error {
 	return s.redis.Del(ctx, refreshKey(refreshToken)).Err()
 }
 
-// issueTokens generates a new access + refresh token pair for the given user.
 func (s *service) issueTokens(ctx context.Context, u *user.User) (*Tokens, error) {
 	accessToken, err := s.newAccessToken(u)
 	if err != nil {
