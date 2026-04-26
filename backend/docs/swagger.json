@@ -6,7 +6,7 @@
         "contact": {},
         "version": "1.0"
     },
-    "host": "93.77.160.169",
+    "host": "матурин15.рф",
     "basePath": "/api/v1",
     "paths": {
         "/auth/forgot-password": {

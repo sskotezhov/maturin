@@ -1,7 +1,7 @@
 // @title           Maturin API
 // @version         1.0
 // @description     B2B platform REST API
-// @host            93.77.160.169
+// @host            матурин15.рф
 // @BasePath        /api/v1
 // @securityDefinitions.apikey BearerAuth
 // @in header

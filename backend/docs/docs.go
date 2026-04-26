@@ -999,7 +999,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "93.77.160.169",
+	Host:             "матурин15.рф",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
 	Title:            "Maturin API",
