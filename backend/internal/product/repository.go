@@ -105,17 +105,18 @@ func (r *oneCRepository) GetCategories(ctx context.Context) ([]Category, error) 
 
 func (r *oneCRepository) fetchAndJoin(ctx context.Context) ([]Product, error) {
 	var (
-		rawProducts   []oneCProduct
-		rawPrices     []oneCPrice
-		rawCategories []oneCCategory
-		rawStocks     []oneCStockBalance
+		rawProducts []oneCProduct
+		rawPrices   []oneCPrice
+		rawStocks   []oneCStockBalance
 	)
 
 	g, gctx := errgroup.WithContext(ctx)
 
 	g.Go(func() error {
 		params := url.Values{}
-		params.Set("$select", "Ref_Key,Code,Description,НаименованиеПолное,Артикул,КатегорияНоменклатуры_Key,ТипНоменклатуры,ВидСтавкиНДС,ДатаИзменения,IsFolder,DeletionMark")
+		params.Set("$filter", "IsFolder eq false and DeletionMark eq false")
+		params.Set("$select", "Ref_Key,Code,Description,НаименованиеПолное,Артикул,КатегорияНоменклатуры_Key,КатегорияНоменклатуры/Description,ТипНоменклатуры,ВидСтавкиНДС,ДатаИзменения")
+		params.Set("$expand", "КатегорияНоменклатуры")
 		items, err := r.client.Fetch(gctx, "Catalog_Номенклатура", params)
 		if err != nil {
 			slog.Error("1C: Catalog_Номенклатура failed", "err", err)
@@ -124,20 +125,20 @@ func (r *oneCRepository) fetchAndJoin(ctx context.Context) ([]Product, error) {
 		rawProducts = make([]oneCProduct, 0, len(items))
 		for _, raw := range items {
 			var p oneCProduct
-			if err := json.Unmarshal(raw, &p); err == nil && !p.IsFolder && !p.DeletionMark {
+			if err := json.Unmarshal(raw, &p); err == nil {
 				rawProducts = append(rawProducts, p)
 			}
 		}
-		slog.Info("1C: Catalog_Номенклатура fetched", "total", len(items), "filtered", len(rawProducts))
+		slog.Info("1C: Catalog_Номенклатура fetched", "count", len(rawProducts))
 		return nil
 	})
 
 	g.Go(func() error {
 		params := url.Values{}
 		params.Set("$select", "Номенклатура_Key,ВидЦен_Key,Period,Цена")
-		items, err := r.client.Fetch(gctx, "InformationRegister_ЦеныНоменклатуры", params)
+		items, err := r.client.Fetch(gctx, "InformationRegister_ЦеныНоменклатуры/SliceLast()", params)
 		if err != nil {
-			slog.Error("1C: InformationRegister_ЦеныНоменклатуры failed", "err", err)
+			slog.Error("1C: InformationRegister_ЦеныНоменклатуры/SliceLast() failed", "err", err)
 			return err
 		}
 		rawPrices = make([]oneCPrice, 0, len(items))
@@ -147,26 +148,7 @@ func (r *oneCRepository) fetchAndJoin(ctx context.Context) ([]Product, error) {
 				rawPrices = append(rawPrices, p)
 			}
 		}
-		slog.Info("1C: ЦеныНоменклатуры fetched", "count", len(rawPrices))
-		return nil
-	})
-
-	g.Go(func() error {
-		params := url.Values{}
-		params.Set("$select", "Ref_Key,Description")
-		items, err := r.client.Fetch(gctx, "Catalog_КатегорииНоменклатуры", params)
-		if err != nil {
-			slog.Error("1C: Catalog_КатегорииНоменклатуры failed", "err", err)
-			return err
-		}
-		rawCategories = make([]oneCCategory, 0, len(items))
-		for _, raw := range items {
-			var c oneCCategory
-			if err := json.Unmarshal(raw, &c); err == nil {
-				rawCategories = append(rawCategories, c)
-			}
-		}
-		slog.Info("1C: КатегорииНоменклатуры fetched", "count", len(rawCategories))
+		slog.Info("1C: ЦеныНоменклатуры/SliceLast fetched", "count", len(rawPrices))
 		return nil
 	})
 
@@ -193,7 +175,7 @@ func (r *oneCRepository) fetchAndJoin(ctx context.Context) ([]Product, error) {
 		return nil, err
 	}
 
-	result := join(rawProducts, rawPrices, rawCategories, rawStocks)
+	result := join(rawProducts, rawPrices, rawStocks)
 	slog.Info("catalog: join complete", "products", len(result))
 	return result, nil
 }
@@ -215,7 +197,7 @@ func (r *oneCRepository) fetchCategories(ctx context.Context) ([]Category, error
 	return cats, nil
 }
 
-func join(products []oneCProduct, prices []oneCPrice, categories []oneCCategory, stocks []oneCStockBalance) []Product {
+func join(products []oneCProduct, prices []oneCPrice, stocks []oneCStockBalance) []Product {
 	latestPrice := make(map[string]oneCPrice, len(prices))
 	for _, p := range prices {
 		if p.PriceTypeKey != RetailPriceTypeKey {
@@ -231,13 +213,12 @@ func join(products []oneCProduct, prices []oneCPrice, categories []oneCCategory,
 		stockQty[s.NomenclatureKey] += s.QtyBalance
 	}
 
-	categoryName := make(map[string]string, len(categories))
-	for _, c := range categories {
-		categoryName[c.RefKey] = c.Description
-	}
-
 	result := make([]Product, 0, len(products))
 	for _, p := range products {
+		categoryName := ""
+		if p.CategoryExpanded != nil {
+			categoryName = p.CategoryExpanded.Description
+		}
 		prod := Product{
 			ID:           p.RefKey,
 			Code:         p.Code,
@@ -245,7 +226,7 @@ func join(products []oneCProduct, prices []oneCPrice, categories []oneCCategory,
 			FullName:     p.FullName,
 			Article:      p.Article,
 			CategoryKey:  p.CategoryKey,
-			CategoryName: categoryName[p.CategoryKey],
+			CategoryName: categoryName,
 			Type:         p.Type,
 			VAT:          p.VAT,
 			UpdatedAt:    p.UpdatedAt,

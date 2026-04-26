@@ -59,14 +59,16 @@ func (c *Client) Fetch(ctx context.Context, endpoint string, params url.Values) 
 		if err != nil {
 			return nil, err
 		}
-		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
+			resp.Body.Close()
 			return nil, fmt.Errorf("1C OData returned status %d for %s", resp.StatusCode, endpoint)
 		}
 
 		var odr oneCResponse
-		if err := json.NewDecoder(resp.Body).Decode(&odr); err != nil {
+		err = json.NewDecoder(resp.Body).Decode(&odr)
+		_ = resp.Body.Close()
+		if err != nil {
 			return nil, fmt.Errorf("decode 1C response for %s: %w", endpoint, err)
 		}
 
@@ -87,7 +89,8 @@ func (c *Client) buildURL(endpoint string, params url.Values) string {
 	}
 	u := c.baseURL + "/" + strings.Join(encoded, "/")
 	if len(params) > 0 {
-		u += "?" + params.Encode()
+		// 1C OData does not accept '+' as a space — must use %20
+		u += "?" + strings.ReplaceAll(params.Encode(), "+", "%20")
 	}
 	return u
 }
