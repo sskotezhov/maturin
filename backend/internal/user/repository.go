@@ -5,12 +5,15 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+
+	"github.com/sskotezhov/maturin/pkg/roles"
 )
 
 // Repository defines the interface for user data access.
 type Repository interface {
 	FindByID(ctx context.Context, id uint) (*User, error)
 	FindByEmail(ctx context.Context, email string) (*User, error)
+	FindAllByRole(ctx context.Context, role roles.Role) ([]*User, error)
 	Create(ctx context.Context, u *User) error
 	Update(ctx context.Context, u *User) error
 }
@@ -112,6 +115,18 @@ func (r *repository) Create(ctx context.Context, u *User) error {
 	u.CreatedAt = rec.CreatedAt
 	u.UpdatedAt = rec.UpdatedAt
 	return nil
+}
+
+func (r *repository) FindAllByRole(ctx context.Context, role roles.Role) ([]*User, error) {
+	var recs []userRecord
+	if err := r.db.WithContext(ctx).Where("role = ?", string(role)).Find(&recs).Error; err != nil {
+		return nil, err
+	}
+	users := make([]*User, len(recs))
+	for i, rec := range recs {
+		users[i] = toEntity(rec)
+	}
+	return users, nil
 }
 
 func (r *repository) Update(ctx context.Context, u *User) error {
