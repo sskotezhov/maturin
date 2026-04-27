@@ -1,0 +1,8 @@
+@import './mobile/mobile-globals.css';
+@import './mobile/mobile-header.css';
+@import './mobile/mobile-menu.css';
+@import './mobile/mobile-slider.css';
+@import './mobile/mobile-partners.css';
+@import './mobile/mobile-footer.css';
+@import './mobile/mobile-auth.css';
+@import 'mobile/mobile-accounting.css';
