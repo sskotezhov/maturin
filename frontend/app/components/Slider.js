@@ -194,23 +194,19 @@ const Slider = () => {
     }
   }, [current, isDragging, transition, slides.length, extendedSlides.length]);
 
-  const stopAutoPlay = () => {
-    if (autoPlayRef.current) {
-      clearInterval(autoPlayRef.current);
-    }
-  };
+  const stopAutoPlay = useCallback(() => {
+    clearInterval(autoPlayRef.current);
+  }, []);
 
-  const startAutoPlay = () => {
+  const startAutoPlay = useCallback(() => {
     stopAutoPlay();
-    autoPlayRef.current = setInterval(() => {
-      nextSlide();
-    }, 3000);
-  };
+    autoPlayRef.current = setInterval(nextSlide, 3000);
+  }, [stopAutoPlay, nextSlide]);
 
   useEffect(() => {
     startAutoPlay();
     return () => stopAutoPlay();
-  }, []);
+  }, [startAutoPlay, stopAutoPlay]);
 
   return (
     <div className="slider" ref={sliderRef}>

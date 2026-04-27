@@ -2,17 +2,13 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
 import AuthModal from 'components/AuthModal';
+import ProductCard from 'components/ProductCard';
 import { apiFetch } from 'utils/apiClient';
+import { useAuth } from 'utils/useAuth';
 
 const API_BASE = 'https://матурин15.рф/api/v1';
 const LIMIT = 20;
-
-const TYPE_LABELS = {
-  'Запас': 'Товар',
-  'Услуга': 'Услуга',
-};
 
 const SORT_OPTIONS = [
   { value: 'name',       label: 'По названию' },
@@ -36,93 +32,12 @@ function parseParams(p = {}) {
   };
 }
 
-function formatPrice(price) {
-  if (price == null) return '—';
-  return new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency: 'RUB',
-    maximumFractionDigits: 2,
-  }).format(price);
-}
-
-function ProductCard({ product, onAddToCart, cartState }) {
-  const state = cartState[product.id] || {};
-  const name  = product.full_name || product.name;
-
-  return (
-    <article className="catalogue-card" itemScope itemType="https://schema.org/Product">
-      <div className="catalogue-card-header">
-        <span className="catalogue-card-category" itemProp="category">
-          {product.category_name || '—'}
-        </span>
-        {product.type !== 'Услуга' && (
-          <span className={`catalogue-card-stock ${product.in_stock ? 'in-stock' : 'out-of-stock'}`}
-            itemProp="availability"
-            content={product.in_stock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'}
-          >
-            {product.in_stock ? 'В наличии' : 'Нет в наличии'}
-          </span>
-        )}
-      </div>
-
-      <Link href={`/software_catalogue/${product.id}`} className="catalogue-card-name-link">
-        <h3 className="catalogue-card-name" itemProp="name">{name}</h3>
-      </Link>
-
-      <div className="catalogue-card-meta">
-        {product.type && (
-          <span className="catalogue-card-type">{TYPE_LABELS[product.type] ?? product.type}</span>
-        )}
-      </div>
-
-      <div className="catalogue-card-footer" itemProp="offers" itemScope itemType="https://schema.org/Offer">
-        <div className="catalogue-card-price">
-          {product.price ? (
-            <>
-              <span className="catalogue-card-price-value" itemProp="price" content={product.price}>
-                {formatPrice(product.price)}
-              </span>
-              <meta itemProp="priceCurrency" content="RUB" />
-              {product.vat && <span className="catalogue-card-vat">{product.vat}</span>}
-            </>
-          ) : (
-            <span className="catalogue-card-price-empty">Цена по запросу</span>
-          )}
-        </div>
-
-        <div className="catalogue-card-actions">
-          <Link
-            href={`/software_catalogue/${product.id}`}
-            className="catalogue-card-btn-details"
-            aria-label={`Подробнее о ${name}`}
-          >
-            Подробнее
-          </Link>
-          <button
-            className="catalogue-card-btn"
-            onClick={() => onAddToCart(product)}
-            disabled={state.loading}
-            aria-label={`Добавить ${name} в корзину`}
-          >
-            {state.loading ? '...' : 'В корзину'}
-          </button>
-        </div>
-      </div>
-
-      {state.message && (
-        <div className={`catalogue-card-msg ${state.isError ? 'is-error' : 'is-success'}`} role="status">
-          {state.message}
-        </div>
-      )}
-    </article>
-  );
-}
-
 export default function Catalogue({ initialParams, initialProducts = [], initialTotal = 0, initialCategories = [] }) {
   const router   = useRouter();
   const pathname = usePathname();
+  const { isAuthenticated } = useAuth();
 
-  const [filters, setFiltersState] = useState(() => parseParams(initialParams));
+  const [filters,    setFiltersState] = useState(() => parseParams(initialParams));
   const [searchInput, setSearchInput] = useState(initialParams?.q || '');
 
   const [categories, setCategories] = useState(initialCategories);
@@ -132,7 +47,6 @@ export default function Catalogue({ initialParams, initialProducts = [], initial
   const [cartState,  setCartState]  = useState({});
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [pendingProduct,  setPendingProduct]  = useState(null);
-  const [detailProduct,   setDetailProduct]   = useState(null);
 
   const searchTimeout = useRef(null);
   const abortRef      = useRef(null);
@@ -140,16 +54,16 @@ export default function Catalogue({ initialParams, initialProducts = [], initial
 
   useEffect(() => {
     const params = new URLSearchParams();
-    if (filters.q)                         params.set('q',         filters.q);
-    if (filters.category)                  params.set('category',  filters.category);
-    if (filters.type)                      params.set('type',      filters.type);
-    if (filters.in_stock)                  params.set('in_stock',  '1');
-    if (filters.has_price)                 params.set('has_price', '1');
-    if (filters.min_price)                 params.set('min_price', filters.min_price);
-    if (filters.max_price)                 params.set('max_price', filters.max_price);
-    if (filters.sort !== 'name')           params.set('sort',      filters.sort);
-    if (filters.sort_dir !== 'asc')        params.set('sort_dir',  filters.sort_dir);
-    if (filters.page > 1)                  params.set('page',      filters.page);
+    if (filters.q)                  params.set('q',         filters.q);
+    if (filters.category)           params.set('category',  filters.category);
+    if (filters.type)               params.set('type',      filters.type);
+    if (filters.in_stock)           params.set('in_stock',  '1');
+    if (filters.has_price)          params.set('has_price', '1');
+    if (filters.min_price)          params.set('min_price', filters.min_price);
+    if (filters.max_price)          params.set('max_price', filters.max_price);
+    if (filters.sort !== 'name')    params.set('sort',      filters.sort);
+    if (filters.sort_dir !== 'asc') params.set('sort_dir',  filters.sort_dir);
+    if (filters.page > 1)           params.set('page',      filters.page);
 
     const qs = params.toString();
     router.replace(`${pathname}${qs ? `?${qs}` : ''}`, { scroll: false });
@@ -190,10 +104,7 @@ export default function Catalogue({ initialParams, initialProducts = [], initial
   }, []);
 
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
     fetchProducts(filters);
   }, [filters, fetchProducts]);
 
@@ -213,8 +124,7 @@ export default function Catalogue({ initialParams, initialProducts = [], initial
   };
 
   const handleAddToCart = async (product) => {
-    const token = typeof window !== 'undefined' && localStorage.getItem('access_token');
-    if (!token) {
+    if (!isAuthenticated) {
       setPendingProduct(product);
       setIsAuthModalOpen(true);
       return;
@@ -242,7 +152,6 @@ export default function Catalogue({ initialParams, initialProducts = [], initial
         const data = await response.json().catch(() => ({}));
         msg = { loading: false, message: data.detail || 'Ошибка', isError: true };
       }
-
       setCartState((prev) => ({ ...prev, [product.id]: msg }));
     } catch {
       setCartState((prev) => ({
@@ -270,15 +179,11 @@ export default function Catalogue({ initialParams, initialProducts = [], initial
   return (
     <div className="catalogue-wrapper">
 
-      {/* ── Заголовок ── */}
       <h1 className="catalogue-title">
         {filters.q ? `Результаты поиска: «${filters.q}»` : 'Каталог товаров и услуг'}
       </h1>
 
-      {/* ── Панель фильтров ── */}
       <section className="catalogue-filters" aria-label="Фильтры каталога">
-
-        {/* Строка 1: поиск + категория + тип */}
         <div className="catalogue-filters-row">
           <div className="catalogue-filter-group catalogue-group-search">
             <span className="catalogue-filter-label">Поиск</span>
@@ -322,7 +227,6 @@ export default function Catalogue({ initialParams, initialProducts = [], initial
           </div>
         </div>
 
-        {/* Строка 2: цена + чекбоксы + сортировка */}
         <div className="catalogue-filters-row">
           <div className="catalogue-filter-group catalogue-group-price">
             <span className="catalogue-filter-label">Цена, ₽</span>
@@ -400,17 +304,14 @@ export default function Catalogue({ initialParams, initialProducts = [], initial
             </div>
           </div>
         </div>
-
       </section>
 
-      {/* ── Тулбар ── */}
       <div className="catalogue-toolbar">
         <span className="catalogue-count" aria-live="polite">
           {loading ? 'Загрузка...' : `Найдено: ${total}`}
         </span>
       </div>
 
-      {/* ── Сетка ── */}
       {!loading && products.length === 0 ? (
         <p className="catalogue-empty">Товары не найдены</p>
       ) : (
@@ -421,13 +322,11 @@ export default function Catalogue({ initialParams, initialProducts = [], initial
               product={p}
               onAddToCart={handleAddToCart}
               cartState={cartState}
-              onDetails={setDetailProduct}
             />
           ))}
         </div>
       )}
 
-      {/* ── Пагинация ── */}
       {totalPages > 1 && (
         <nav className="catalogue-pagination" aria-label="Пагинация каталога">
           <button
@@ -465,15 +364,6 @@ export default function Catalogue({ initialParams, initialProducts = [], initial
             aria-label="Следующая страница"
           >→</button>
         </nav>
-      )}
-
-      {detailProduct && (
-        <ProductModal
-          product={detailProduct}
-          onClose={() => setDetailProduct(null)}
-          onAddToCart={handleAddToCart}
-          cartState={cartState}
-        />
       )}
 
       <AuthModal
