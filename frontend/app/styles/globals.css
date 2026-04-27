@@ -5,6 +5,8 @@
 @import './footer.css';
 @import './home.css';
 @import './authModal.css';
+@import './catalogue.css';
+@import './cart.css';
 
 body {
   margin: 0;
