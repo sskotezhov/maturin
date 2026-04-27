@@ -1,0 +1,33 @@
+@media (max-width: 768px) {
+    .slider {
+        height: 380px !important;
+    }
+
+    .slide-text-box {
+        width: calc(100% - 32px) !important;
+        left: 16px !important;
+        right: 16px !important;
+        padding: 20px !important;
+        height: auto !important;
+    }
+
+    .slide-text-box .first-row,
+    .slide-text-box .second-row {
+        font-size: 22px !important;
+        line-height: 1.3 !important;
+    }
+
+    .slide-text-content .capsule {
+        width: 140px;
+        height: 40px;
+    }
+
+    .slide-text-content .capsule b {
+        font-size: 12px;
+    }
+
+    .dot {
+        width: 30px;
+        height: 4px;
+    }
+}

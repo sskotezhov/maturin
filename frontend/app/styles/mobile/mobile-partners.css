@@ -1,0 +1,34 @@
+@media (max-width: 768px) {
+    .partners .container {
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .partners .container .rectangle {
+        width: 90% !important;
+        height: auto !important;
+        flex-direction: column;
+        padding: 16px;
+        margin: 0 !important;
+    }
+
+    .partners .container .rectangle .text {
+        margin-left: 0 !important;
+        text-align: center;
+    }
+
+    .partners .container .rectangle .text .prefix-text {
+        font-size: 14px !important;
+    }
+
+    .partners .container .rectangle .text .company-name {
+        display: block;
+        font-size: 16px;
+    }
+
+    .partners .container .rectangle img {
+        max-width: 120px;
+        height: auto !important;
+    }
+}

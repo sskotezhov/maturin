@@ -2,6 +2,7 @@ import Image from 'next/image';
 import ClientAuthWrapper from 'components/ClientAuthWrapper';
 import CartWidget from 'components/CartWidget';
 import Link from 'next/link';
+import MobileMenu from 'components/MobileMenu';
 
 export default function Header() {
   return (
@@ -57,6 +58,7 @@ export default function Header() {
         </div>
         <nav className="bottom">
           <div className="center">
+                <MobileMenu />
             <div className="menu-item">
               <Link href="/" className="menu-link">
                 Главная
