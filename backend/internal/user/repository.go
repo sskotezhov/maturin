@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -9,11 +10,20 @@ import (
 	"github.com/sskotezhov/maturin/pkg/roles"
 )
 
+type Filter struct {
+	Q             string
+	Role          string
+	EmailVerified *bool
+	Page          int
+	Limit         int
+}
+
 // Repository defines the interface for user data access.
 type Repository interface {
 	FindByID(ctx context.Context, id uint) (*User, error)
 	FindByEmail(ctx context.Context, email string) (*User, error)
 	FindAllByRole(ctx context.Context, role roles.Role) ([]*User, error)
+	FindFiltered(ctx context.Context, f Filter) ([]*User, int, error)
 	Create(ctx context.Context, u *User) error
 	Update(ctx context.Context, u *User) error
 }
@@ -132,4 +142,67 @@ func (r *repository) FindAllByRole(ctx context.Context, role roles.Role) ([]*Use
 func (r *repository) Update(ctx context.Context, u *User) error {
 	rec := toDB(u)
 	return r.db.WithContext(ctx).Save(&rec).Error
+}
+
+func (r *repository) FindFiltered(ctx context.Context, f Filter) ([]*User, int, error) {
+	base := r.db.WithContext(ctx).Model(&userRecord{})
+
+	if f.Q != "" {
+		like := "%" + strings.ToLower(f.Q) + "%"
+		digits := digitsOnly(f.Q)
+		if digits != "" {
+			base = base.Where(`
+				LOWER(email) LIKE ? OR
+				LOWER(last_name || ' ' || first_name) LIKE ? OR
+				LOWER(company_name) LIKE ? OR
+				LOWER(telegram) LIKE ? OR
+				inn LIKE ? OR
+				regexp_replace(phone, '\D', '', 'g') LIKE ?
+			`, like, like, like, like, like, "%"+digits+"%")
+		} else {
+			base = base.Where(`
+				LOWER(email) LIKE ? OR
+				LOWER(last_name || ' ' || first_name) LIKE ? OR
+				LOWER(company_name) LIKE ? OR
+				LOWER(telegram) LIKE ? OR
+				inn LIKE ?
+			`, like, like, like, like, like)
+		}
+	}
+	if f.Role != "" {
+		base = base.Where("role = ?", f.Role)
+	}
+	if f.EmailVerified != nil {
+		base = base.Where("email_verified = ?", *f.EmailVerified)
+	}
+
+	var total int64
+	if err := base.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	q := base.Order("created_at desc")
+	if f.Limit > 0 {
+		q = q.Limit(f.Limit).Offset((f.Page - 1) * f.Limit)
+	}
+
+	var recs []userRecord
+	if err := q.Find(&recs).Error; err != nil {
+		return nil, 0, err
+	}
+	out := make([]*User, len(recs))
+	for i, rec := range recs {
+		out[i] = toEntity(rec)
+	}
+	return out, int(total), nil
+}
+
+func digitsOnly(s string) string {
+	var b strings.Builder
+	for _, r := range s {
+		if r >= '0' && r <= '9' {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
 }

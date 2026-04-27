@@ -22,6 +22,7 @@ type Repository interface {
 	GetAll(ctx context.Context) ([]Product, error)
 	GetByID(ctx context.Context, id string) (*Product, error)
 	GetCategories(ctx context.Context) ([]Category, error)
+	RefreshCache(ctx context.Context) (productsCount, categoriesCount int, err error)
 }
 
 type oneCRepository struct {
@@ -101,6 +102,21 @@ func (r *oneCRepository) GetCategories(ctx context.Context) ([]Category, error) 
 	}
 
 	return cats, nil
+}
+
+func (r *oneCRepository) RefreshCache(ctx context.Context) (int, int, error) {
+	if err := r.rdb.Del(ctx, cacheKeyAll, cacheKeyCategories).Err(); err != nil {
+		slog.Warn("catalog: cache del failed", "err", err)
+	}
+	products, err := r.GetAll(ctx)
+	if err != nil {
+		return 0, 0, err
+	}
+	cats, err := r.GetCategories(ctx)
+	if err != nil {
+		return len(products), 0, err
+	}
+	return len(products), len(cats), nil
 }
 
 func (r *oneCRepository) fetchAndJoin(ctx context.Context) ([]Product, error) {

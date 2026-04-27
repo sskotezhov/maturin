@@ -34,6 +34,7 @@ type Service interface {
 	ListProducts(ctx context.Context, f ListFilter) (ListResult, error)
 	GetProduct(ctx context.Context, id string) (*Product, error)
 	ListCategories(ctx context.Context) ([]Category, error)
+	RefreshCache(ctx context.Context) (productsCount, categoriesCount int, err error)
 }
 
 type service struct {
@@ -114,6 +115,10 @@ func (s *service) GetProduct(ctx context.Context, id string) (*Product, error) {
 
 func (s *service) ListCategories(ctx context.Context) ([]Category, error) {
 	return s.repo.GetCategories(ctx)
+}
+
+func (s *service) RefreshCache(ctx context.Context) (int, int, error) {
+	return s.repo.RefreshCache(ctx)
 }
 
 func matchSearch(p Product, q string) bool {
