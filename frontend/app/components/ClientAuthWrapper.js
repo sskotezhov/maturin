@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import AuthModal from 'components/AuthModal';
-
-const API_BASE_URL = 'https://матурин15.рф/api/v1';
+import { apiFetch } from 'utils/apiClient';
 
 export default function ClientAuthWrapper() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -41,10 +40,17 @@ export default function ClientAuthWrapper() {
       }
     };
 
+    const handleAuthLogout = () => {
+      setIsAuthenticated(false);
+      setUserName('');
+    };
+
     window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('auth:logout', handleAuthLogout);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('auth:logout', handleAuthLogout);
     };
   }, [checkAuth]);
 
@@ -57,33 +63,15 @@ export default function ClientAuthWrapper() {
     if (typeof window === 'undefined') return;
 
     const refreshToken = localStorage.getItem('refresh_token');
-
-    if (!refreshToken) {
-      console.log('Refresh token не найден, пропускаем API логаут');
-      return;
-    }
+    if (!refreshToken) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+      await apiFetch('/auth/logout', {
         method: 'POST',
-        headers: {
-          accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          refresh_token: refreshToken,
-        }),
+        body: JSON.stringify({ refresh_token: refreshToken }),
       });
-
-      if (response.ok) {
-        console.log('Выход успешен');
-      } else {
-        const errorData = await response.json();
-        console.error('Ошибка при выходе:', errorData);
-      }
-    } catch (error) {
-      console.error('Ошибка соединения при выходе:', error);
-    }
+    } catch {
+}
   };
 
   const handleLogout = async () => {

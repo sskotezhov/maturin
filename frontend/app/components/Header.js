@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import ClientAuthWrapper from 'components/ClientAuthWrapper';
+import CartWidget from 'components/CartWidget';
 import Link from 'next/link';
 
 export default function Header() {
@@ -93,6 +94,7 @@ export default function Header() {
                 Контакты
               </Link>
             </div>
+            <CartWidget />
             <ClientAuthWrapper />
           </div>
         </nav>
