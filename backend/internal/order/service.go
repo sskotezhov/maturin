@@ -199,15 +199,18 @@ func (s *service) Submit(ctx context.Context, userID uint) (*Order, error) {
 
 	slog.Info("order submitted", "order_id", order.ID, "user_id", userID)
 
-	managers, err := s.userRepo.FindAllByRole(ctx, roles.RoleManager)
-	if err != nil {
-		slog.Error("submit: fetch managers failed", "err", err)
-	}
-	for _, m := range managers {
-		m := m
-		s.tryNotify(ctx, order.ID, m.ID, func() error {
-			return s.emailSender.SendOrderSubmitted(m.Email, order.ID)
-		})
+	for _, role := range []roles.Role{roles.RoleManager, roles.RoleAdmin} {
+		staff, err := s.userRepo.FindAllByRole(ctx, role)
+		if err != nil {
+			slog.Error("submit: fetch staff failed", "role", role, "err", err)
+			continue
+		}
+		for _, u := range staff {
+			u := u
+			s.tryNotify(ctx, order.ID, u.ID, func() error {
+				return s.emailSender.SendOrderSubmitted(u.Email, order.ID)
+			})
+		}
 	}
 
 	order.Status = StatusSubmitted
@@ -336,15 +339,18 @@ func (s *service) SendMessage(ctx context.Context, userID uint, role string, ord
 	slog.Info("message sent", "order_id", orderID, "user_id", userID, "msg_id", msg.ID)
 
 	if role == string(roles.RoleClient) {
-		managers, err := s.userRepo.FindAllByRole(ctx, roles.RoleManager)
-		if err != nil {
-			slog.Error("send message: fetch managers failed", "err", err)
-		}
-		for _, m := range managers {
-			m := m
-			s.tryNotify(ctx, order.ID, m.ID, func() error {
-				return s.emailSender.SendNewMessage(m.Email, order.ID)
-			})
+		for _, r := range []roles.Role{roles.RoleManager, roles.RoleAdmin} {
+			staff, err := s.userRepo.FindAllByRole(ctx, r)
+			if err != nil {
+				slog.Error("send message: fetch staff failed", "role", r, "err", err)
+				continue
+			}
+			for _, u := range staff {
+				u := u
+				s.tryNotify(ctx, order.ID, u.ID, func() error {
+					return s.emailSender.SendNewMessage(u.Email, order.ID)
+				})
+			}
 		}
 	} else {
 		client, err := s.userRepo.FindByID(ctx, order.UserID)
