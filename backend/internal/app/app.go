@@ -15,10 +15,12 @@ import (
 	"github.com/sskotezhov/maturin/internal/auth"
 	"github.com/sskotezhov/maturin/internal/order"
 	"github.com/sskotezhov/maturin/internal/product"
+	"github.com/sskotezhov/maturin/internal/staff"
 	"github.com/sskotezhov/maturin/internal/user"
 	"github.com/sskotezhov/maturin/pkg/email"
 	mw "github.com/sskotezhov/maturin/pkg/middleware"
 	"github.com/sskotezhov/maturin/pkg/onec"
+	"github.com/sskotezhov/maturin/pkg/roles"
 )
 
 type App struct {
@@ -95,6 +97,11 @@ func New(cfg *config.Config, db *gorm.DB, rdb *redis.Client) (*App, error) {
 	user.NewHandler(userSvc).Register(authed.Group("/user"))
 	cartHandler.RegisterCart(authed.Group("/cart"))
 	cartHandler.RegisterOrders(authed.Group("/orders"))
+
+	// staff (manager + admin)
+	staffSvc := staff.NewService(userRepo, cartRepo, productSvc)
+	staffHandler := staff.NewHandler(staffSvc)
+	staffHandler.Register(authed.Group("/staff", mw.RequireRoles(roles.RoleManager, roles.RoleAdmin)))
 
 	// прогрев кеша в фоне
 	go func() {

@@ -18,6 +18,10 @@ type Repository interface {
 	FindDraftByUser(ctx context.Context, userID uint) (*Order, error)
 	FindByID(ctx context.Context, id uint) (*Order, error)
 	FindFiltered(ctx context.Context, f Filter) ([]*Order, error)
+	FindByUserID(ctx context.Context, userID uint, limit int) ([]*Order, error)
+	CountByUserID(ctx context.Context, userID uint) (int, error)
+	CountByStatus(ctx context.Context) (map[Status]int, error)
+	CountStaleSubmitted(ctx context.Context, threshold time.Duration) (int, error)
 	Create(ctx context.Context, order *Order) error
 	UpdateStatus(ctx context.Context, id uint, status Status, totalPrice *float64) error
 	AddItem(ctx context.Context, item *Item) error
@@ -242,4 +246,63 @@ func (r *repository) FindMessages(ctx context.Context, orderID uint) ([]Message,
 		msgs[i] = toMessageEntity(rec)
 	}
 	return msgs, nil
+}
+
+func (r *repository) FindByUserID(ctx context.Context, userID uint, limit int) ([]*Order, error) {
+	q := r.db.WithContext(ctx).Preload("Items").
+		Where("user_id = ?", userID).
+		Order("created_at desc")
+	if limit > 0 {
+		q = q.Limit(limit)
+	}
+	var recs []orderRecord
+	if err := q.Find(&recs).Error; err != nil {
+		return nil, err
+	}
+	orders := make([]*Order, len(recs))
+	for i, rec := range recs {
+		orders[i] = toOrderEntity(rec)
+	}
+	return orders, nil
+}
+
+func (r *repository) CountByUserID(ctx context.Context, userID uint) (int, error) {
+	var count int64
+	err := r.db.WithContext(ctx).Model(&orderRecord{}).
+		Where("user_id = ?", userID).
+		Count(&count).Error
+	return int(count), err
+}
+
+func (r *repository) CountByStatus(ctx context.Context) (map[Status]int, error) {
+	type row struct {
+		Status string
+		Count  int64
+	}
+	var rows []row
+	if err := r.db.WithContext(ctx).Model(&orderRecord{}).
+		Select("status, count(*) as count").
+		Group("status").
+		Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	out := map[Status]int{
+		StatusDraft:     0,
+		StatusSubmitted: 0,
+		StatusApproved:  0,
+		StatusCancelled: 0,
+	}
+	for _, r := range rows {
+		out[Status(r.Status)] = int(r.Count)
+	}
+	return out, nil
+}
+
+func (r *repository) CountStaleSubmitted(ctx context.Context, threshold time.Duration) (int, error) {
+	cutoff := time.Now().Add(-threshold)
+	var count int64
+	err := r.db.WithContext(ctx).Model(&orderRecord{}).
+		Where("status = ? AND updated_at < ?", string(StatusSubmitted), cutoff).
+		Count(&count).Error
+	return int(count), err
 }
