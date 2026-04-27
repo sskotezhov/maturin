@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-
 const MobileMenu = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
@@ -39,6 +38,7 @@ const MobileMenu = () => {
         { href: '/', label: 'Главная' },
         { href: '/software_catalogue', label: 'Оборудование и ПО' },
         { href: '/contacts', label: 'Контакты' },
+        { href: '/orders', label: 'Заявки' },
     ];
 
     const closeMenu = () => setIsOpen(false);

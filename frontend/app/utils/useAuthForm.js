@@ -136,6 +136,7 @@ export function useAuthForm({ isOpen, onClose, onAuthSuccess }) {
         const { ok, data } = await post('/auth/login', { email, password });
         if (ok) {
           setAuthTokens(data.access_token, data.refresh_token, data.user);
+          window.dispatchEvent(new Event('auth:login'));
           onAuthSuccess?.(data);
           savedEmailRef.current = '';
           onClose();
@@ -148,6 +149,7 @@ export function useAuthForm({ isOpen, onClose, onAuthSuccess }) {
         });
         if (ok) {
           setAuthTokens(data.access_token, data.refresh_token, data.user);
+          window.dispatchEvent(new Event('auth:login'));
           onAuthSuccess?.(data);
           savedEmailRef.current = '';
           onClose();
