@@ -2,16 +2,17 @@
 
 import { useState } from 'react';
 import { apiFetch } from 'utils/apiClient';
+import { useAuth } from 'utils/useAuth';
 import AuthModal from 'components/AuthModal';
 
 export default function AddToCartButton({ product }) {
-  const [loading,        setLoading]        = useState(false);
-  const [message,        setMessage]        = useState(null);
-  const [isAuthOpen,     setIsAuthOpen]     = useState(false);
+  const { isAuthenticated } = useAuth();
+  const [loading,    setLoading]    = useState(false);
+  const [message,    setMessage]    = useState(null);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const add = async () => {
-    const token = localStorage.getItem('access_token');
-    if (!token) { setIsAuthOpen(true); return; }
+    if (!isAuthenticated) { setIsAuthOpen(true); return; }
 
     setLoading(true);
     setMessage(null);
