@@ -116,7 +116,6 @@ export default async function ProductPage({ params }) {
                   <span className="product-price" itemProp="price" content={product.price}>
                     {formatPrice(product.price)}
                   </span>
-                  {product.vat && <span className="product-vat">{product.vat}</span>}
                 </>
               ) : (
                 <span className="product-price-empty">Цена по запросу</span>

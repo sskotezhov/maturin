@@ -53,7 +53,6 @@ export default function ProductCard({ product, onAddToCart, cartState }) {
                 {formatPrice(product.price)}
               </span>
               <meta itemProp="priceCurrency" content="RUB" />
-              {product.vat && <span className="catalogue-card-vat">{product.vat}</span>}
             </>
           ) : (
             <span className="catalogue-card-price-empty">Цена по запросу</span>

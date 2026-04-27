@@ -1,110 +1,59 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { apiFetch } from 'utils/apiClient';
-import { useAuth } from 'utils/useAuth';
-import OrderCard from 'components/OrderCard';
 
 export default function CartWidget() {
-  const { isAuthenticated, userId: currentUserId } = useAuth();
-  const [isOpen,   setIsOpen]   = useState(false);
-  const [orders,   setOrders]   = useState([]);
-  const [loading,  setLoading]  = useState(false);
+  const [badgeCount, setBadgeCount] = useState(0);
 
-  const fetchOrders = useCallback(async () => {
-    if (!localStorage.getItem('access_token')) { setOrders([]); return; }
-    setLoading(true);
-    try {
-      const [cartRes, ordersRes] = await Promise.all([
-        apiFetch('/cart'),
-        apiFetch('/orders?limit=50'),
-      ]);
+  const fetchCount = useCallback(async () => {
+    if (!localStorage.getItem('access_token')) { setBadgeCount(0); return; }
 
-      const allOrders = [];
-      if (cartRes.ok) allOrders.push(await cartRes.json());
-      if (ordersRes.ok) {
-        const list = await ordersRes.json();
-        allOrders.push(...(Array.isArray(list) ? list : []).filter((o) => o.status !== 'draft'));
-      }
-      setOrders(allOrders);
-    } finally {
-      setLoading(false);
+    const [cartResult, ordersResult] = await Promise.allSettled([
+      apiFetch('/cart'),
+      apiFetch('/orders?limit=50&status=submitted'),
+    ]);
+    let count = 0;
+    if (cartResult.status === 'fulfilled' && cartResult.value.ok) {
+      const cart = await cartResult.value.json();
+      count += cart?.items?.length || 0;
     }
+    if (ordersResult.status === 'fulfilled' && ordersResult.value.ok) {
+      const data = await ordersResult.value.json();
+      const list = Array.isArray(data) ? data : (data.items || []);
+      count += list.filter((o) => o.status === 'submitted').length;
+    }
+    setBadgeCount(count);
   }, []);
 
   useEffect(() => {
-    const onStorage     = (e) => { if (e.key === 'access_token') fetchOrders(); };
-    const onLogout      = () => { setOrders([]); setIsOpen(false); };
-    const onCartUpdated = () => fetchOrders();
+    fetchCount();
+    const onStorage = (e) => { if (e.key === 'access_token') fetchCount(); };
+    const onLogout  = () => setBadgeCount(0);
+    const onUpdate  = () => fetchCount();
     window.addEventListener('storage',      onStorage);
+    window.addEventListener('auth:login',   onUpdate);
     window.addEventListener('auth:logout',  onLogout);
-    window.addEventListener('cart:updated', onCartUpdated);
+    window.addEventListener('cart:updated', onUpdate);
     return () => {
       window.removeEventListener('storage',      onStorage);
+      window.removeEventListener('auth:login',   onUpdate);
       window.removeEventListener('auth:logout',  onLogout);
-      window.removeEventListener('cart:updated', onCartUpdated);
+      window.removeEventListener('cart:updated', onUpdate);
     };
-  }, [fetchOrders]);
-
-  useEffect(() => {
-    if (isOpen) fetchOrders();
-  }, [isOpen, fetchOrders]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const onKey = (e) => { if (e.key === 'Escape') setIsOpen(false); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [isOpen]);
-
-  if (!isAuthenticated) return null;
-
-  const draft       = orders.find((o) => o.status === 'draft');
-  const draftCount  = draft?.items?.length || 0;
-  const activeCount = orders.filter((o) => o.status === 'submitted').length;
-  const badgeCount  = draftCount + activeCount;
+  }, [fetchCount]);
 
   return (
-    <>
-      <button
-        className="cart-btn"
-        onClick={() => setIsOpen(true)}
+    <div className="menu-item">
+      <Link
+        href="/orders"
+        className="cart-nav-link"
         aria-label={`Заявки${badgeCount ? `, ${badgeCount} активных` : ''}`}
       >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-          <rect x="9" y="3" width="6" height="4" rx="1"/>
-          <line x1="9" y1="12" x2="15" y2="12"/>
-          <line x1="9" y1="16" x2="13" y2="16"/>
-        </svg>
+        Заявки
         {badgeCount > 0 && <span className="cart-badge" aria-hidden="true">{badgeCount}</span>}
-      </button>
-
-      {isOpen && <div className="cart-overlay" onClick={() => setIsOpen(false)} aria-hidden="true" />}
-
-      <aside className={`cart-drawer ${isOpen ? 'open' : ''}`} aria-label="Мои заявки">
-        <div className="cart-drawer-header">
-          <h2 className="cart-drawer-title">Мои заявки</h2>
-          <button className="cart-drawer-close" onClick={() => setIsOpen(false)} aria-label="Закрыть">✕</button>
-        </div>
-
-        <div className="cart-drawer-body">
-          {loading && <p className="cart-empty">Загрузка...</p>}
-
-          {!loading && orders.length === 0 && (
-            <p className="cart-empty">Заявок пока нет</p>
-          )}
-
-          {!loading && orders.map((order) => (
-            <OrderCard
-              key={order.id}
-              order={order}
-              currentUserId={currentUserId}
-              onAction={fetchOrders}
-            />
-          ))}
-        </div>
-      </aside>
-    </>
+      </Link>
+    </div>
   );
 }
