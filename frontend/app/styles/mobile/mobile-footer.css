@@ -1,0 +1,65 @@
+@media (max-width: 768px) {
+    .footer .container .consultation .lp,
+    .footer .container .consultation .rp {
+        display: none;
+    }
+
+    .footer .container .consultation .center {
+        height: auto !important;
+        padding: 40px 20px;
+    }
+
+    .footer .container .consultation .center .form {
+        width: 100% !important;
+        max-width: 500px;
+        height: auto !important;
+        padding: 20px;
+    }
+
+    .footer .container .consultation .center .form .center {
+        width: 100% !important;
+    }
+
+    .footer .container .consultation .center .creds {
+        flex-direction: column !important;
+        gap: 16px;
+    }
+
+    .footer .container .consultation .center .creds .name,
+    .footer .container .consultation .center .creds .phone {
+        width: 100% !important;
+    }
+
+    .footer .container .consultation .center .creds .name input,
+    .footer .container .consultation .center .creds .phone input {
+        width: 100% !important;
+        height: 44px !important;
+        font-size: 16px !important;
+    }
+
+    .footer .container .consultation .center .comment {
+        width: 100% !important;
+    }
+
+    .footer .container .consultation .center .comment textarea {
+        width: 100% !important;
+        font-size: 16px !important;
+    }
+
+    .footer .container .consultation .center .agreement {
+        width: 100% !important;
+        font-size: 11px !important;
+    }
+
+    .footer .container .consultation .center .title {
+        font-size: 20px !important;
+        text-align: center;
+    }
+
+    .footer .container .footer-bottom .content {
+        flex-direction: column;
+        text-align: center;
+        gap: 8px;
+        padding: 16px;
+    }
+}
