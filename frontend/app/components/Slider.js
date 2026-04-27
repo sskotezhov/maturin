@@ -11,21 +11,21 @@ const Slider = () => {
       '/images/homeslider/slide1.png',
       'БУХГАЛТЕРСКОЕ',
       'ОБСЛУЖИВАНИЕ',
-      '/services/accounting',
+      '/',
     ],
     [
       'Слайд 2',
       '/images/homeslider/slide1.png',
       'Текст2',
       'Текст2',
-      '/services/service2',
+      '/',
     ],
     [
       'Слайд 3',
       '/images/homeslider/slide1.png',
       'Текст3',
       'Текст3',
-      '/services/service3',
+      '/',
     ],
     [
       'Слайд 4',
@@ -247,7 +247,7 @@ const Slider = () => {
                 <div className="slide-text-content">
                   <div className="first-row">{slide[2]}</div>
                   <div className="second-row">{slide[3]}</div>
-                  <Link href={slide[4]} className="capsule">
+                  <Link href={slide[4]} className="capsule" prefetch={false}>
                     Подробнее
                   </Link>
                 </div>
