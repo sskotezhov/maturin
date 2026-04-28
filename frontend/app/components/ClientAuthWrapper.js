@@ -44,11 +44,9 @@ export default function ClientAuthWrapper() {
         <div className="dropdown-content">
           {isAuthenticated ? (
             <>
-              {isStaff && (
-                <Link href="/admin/orders" className="menu-link">
-                  Панель заказов
-                </Link>
-              )}
+              <Link href="/profile" className="menu-link">
+                Профиль
+              </Link>
               <button
                 onClick={handleLogout}
                 className="menu-link"
