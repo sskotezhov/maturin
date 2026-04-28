@@ -804,7 +804,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Filter by status (draft, submitted, approved, cancelled)",
+                        "description": "Filter by status (draft, submitted, approved, cancelled); manager/admin see draft only for themselves",
                         "name": "status",
                         "in": "query"
                     },

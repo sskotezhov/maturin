@@ -918,7 +918,8 @@ paths:
   /orders:
     get:
       parameters:
-      - description: Filter by status (draft, submitted, approved, cancelled)
+      - description: Filter by status (draft, submitted, approved, cancelled); manager/admin
+          see draft only for themselves
         in: query
         name: status
         type: string
