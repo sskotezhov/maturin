@@ -18,10 +18,13 @@ export default function AdminNavItem() {
 
   return (
     <div className="menu-item">
-      <Link href="/admin/orders" className="menu-link">
+      <Link href="/admin/dashboard" className="menu-link">
         Управление
       </Link>
       <div className="dropdown-content">
+        <Link href="/admin/dashboard" className="menu-link">
+          Дашборд
+        </Link>
         <Link href="/admin/orders" className="menu-link">
           Панель заказов
         </Link>
