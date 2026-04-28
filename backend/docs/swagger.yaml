@@ -68,6 +68,30 @@ definitions:
       password:
         type: string
     type: object
+  inquiry.submitRequest:
+    properties:
+      comment:
+        type: string
+      consent:
+        type: boolean
+      name:
+        type: string
+      page_url:
+        type: string
+      phone:
+        type: string
+      source:
+        type: string
+    type: object
+  inquiry.submitResponse:
+    properties:
+      id:
+        type: integer
+      message:
+        type: string
+      status:
+        type: string
+    type: object
   order.addItemRequest:
     properties:
       comment:
@@ -209,6 +233,11 @@ definitions:
       refreshed_at:
         type: string
     type: object
+  staff.changeInquiryStatusRequest:
+    properties:
+      status:
+        type: string
+    type: object
   staff.changeRoleRequest:
     properties:
       role:
@@ -277,6 +306,42 @@ definitions:
         type: object
       stale_submitted_count:
         type: integer
+    type: object
+  staff.inquiryListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/staff.inquiryView'
+        type: array
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  staff.inquiryView:
+    properties:
+      comment:
+        type: string
+      consent_accepted:
+        type: boolean
+      created_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      page_url:
+        type: string
+      phone:
+        type: string
+      source:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
     type: object
   staff.orderItemView:
     properties:
@@ -817,6 +882,39 @@ paths:
       summary: List categories
       tags:
       - products
+  /inquiries:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Inquiry form
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/inquiry.submitRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/inquiry.submitResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Submit public inquiry form
+      tags:
+      - inquiries
   /orders:
     get:
       parameters:
@@ -1288,6 +1386,125 @@ paths:
       security:
       - BearerAuth: []
       summary: Staff dashboard (manager/admin)
+      tags:
+      - staff
+  /staff/inquiries:
+    get:
+      parameters:
+      - description: Search by name, phone or comment
+        in: query
+        name: q
+        type: string
+      - description: 'Filter by status: new | contacted | closed'
+        in: query
+        name: status
+        type: string
+      - description: Page (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Limit (default 20)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/staff.inquiryListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List/search public inquiries (manager/admin)
+      tags:
+      - staff
+  /staff/inquiries/{id}:
+    get:
+      parameters:
+      - description: Inquiry ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/staff.inquiryView'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get public inquiry details (manager/admin)
+      tags:
+      - staff
+  /staff/inquiries/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Inquiry ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: New status
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/staff.changeInquiryStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Change public inquiry status (manager/admin)
       tags:
       - staff
   /user/me:
