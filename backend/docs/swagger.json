@@ -2039,6 +2039,9 @@
                         "$ref": "#/definitions/order.orderItemResponse"
                     }
                 },
+                "response_status": {
+                    "type": "string"
+                },
                 "status": {
                     "type": "string"
                 },
@@ -2373,6 +2376,9 @@
                     "items": {
                         "$ref": "#/definitions/staff.orderItemView"
                     }
+                },
+                "response_status": {
+                    "type": "string"
                 },
                 "status": {
                     "type": "string"

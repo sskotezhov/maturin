@@ -31,6 +31,7 @@ type Repository interface {
 	FindItem(ctx context.Context, itemID uint) (*Item, error)
 	AddMessage(ctx context.Context, msg *Message) error
 	FindMessages(ctx context.Context, orderID uint) ([]Message, error)
+	FindLastMessage(ctx context.Context, orderID uint) (*Message, error)
 }
 
 type orderRecord struct {
@@ -250,6 +251,18 @@ func (r *repository) FindMessages(ctx context.Context, orderID uint) ([]Message,
 		msgs[i] = toMessageEntity(rec)
 	}
 	return msgs, nil
+}
+
+func (r *repository) FindLastMessage(ctx context.Context, orderID uint) (*Message, error) {
+	var rec messageRecord
+	if err := r.db.WithContext(ctx).
+		Where("order_id = ?", orderID).
+		Order("created_at desc, id desc").
+		First(&rec).Error; err != nil {
+		return nil, err
+	}
+	msg := toMessageEntity(rec)
+	return &msg, nil
 }
 
 func (r *repository) FindByUserID(ctx context.Context, userID uint, limit int) ([]*Order, error) {

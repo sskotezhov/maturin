@@ -70,13 +70,14 @@ type orderItemView struct {
 }
 
 type orderView struct {
-	ID         uint            `json:"id"`
-	UserID     uint            `json:"user_id"`
-	Status     string          `json:"status"`
-	TotalPrice *float64        `json:"total_price"`
-	Items      []orderItemView `json:"items"`
-	CreatedAt  string          `json:"created_at"`
-	UpdatedAt  string          `json:"updated_at"`
+	ID             uint            `json:"id"`
+	UserID         uint            `json:"user_id"`
+	Status         string          `json:"status"`
+	ResponseStatus string          `json:"response_status"`
+	TotalPrice     *float64        `json:"total_price"`
+	Items          []orderItemView `json:"items"`
+	CreatedAt      string          `json:"created_at"`
+	UpdatedAt      string          `json:"updated_at"`
 }
 
 type clientDetailsResponse struct {
@@ -157,14 +158,22 @@ func toOrderView(o *order.Order) orderView {
 		}
 	}
 	return orderView{
-		ID:         o.ID,
-		UserID:     o.UserID,
-		Status:     string(o.Status),
-		TotalPrice: o.TotalPrice,
-		Items:      items,
-		CreatedAt:  o.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt:  o.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		ID:             o.ID,
+		UserID:         o.UserID,
+		Status:         string(o.Status),
+		ResponseStatus: orderResponseStatus(o),
+		TotalPrice:     o.TotalPrice,
+		Items:          items,
+		CreatedAt:      o.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt:      o.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
+}
+
+func orderResponseStatus(o *order.Order) string {
+	if o.ResponseStatus == "" {
+		return string(order.ResponseNone)
+	}
+	return string(o.ResponseStatus)
 }
 
 func toInquiryView(i *inquiry.Inquiry) inquiryView {

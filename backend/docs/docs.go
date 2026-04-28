@@ -2045,6 +2045,9 @@ const docTemplate = `{
                         "$ref": "#/definitions/order.orderItemResponse"
                     }
                 },
+                "response_status": {
+                    "type": "string"
+                },
                 "status": {
                     "type": "string"
                 },
@@ -2379,6 +2382,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/staff.orderItemView"
                     }
+                },
+                "response_status": {
+                    "type": "string"
                 },
                 "status": {
                     "type": "string"

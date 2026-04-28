@@ -82,6 +82,7 @@ func (s *service) GetCart(ctx context.Context, userID uint) (*Order, error) {
 		slog.Error("get cart failed", "user_id", userID, "err", err)
 		return nil, err
 	}
+	order.ResponseStatus = ResponseNone
 	return order, nil
 }
 
@@ -214,6 +215,7 @@ func (s *service) Submit(ctx context.Context, userID uint) (*Order, error) {
 	}
 
 	order.Status = StatusSubmitted
+	order.ResponseStatus = ResponseWaitingManager
 	return order, nil
 }
 
@@ -229,7 +231,12 @@ func (s *service) GetOrders(ctx context.Context, userID uint, role string, f Fil
 	} else if role == string(roles.RoleManager) || role == string(roles.RoleAdmin) {
 		f.DraftVisibleToUserID = userID
 	}
-	return s.repo.FindFiltered(ctx, f)
+	orders, err := s.repo.FindFiltered(ctx, f)
+	if err != nil {
+		return nil, err
+	}
+	s.enrichResponseStatuses(ctx, orders)
+	return orders, nil
 }
 
 func (s *service) GetOrder(ctx context.Context, userID uint, role string, orderID uint) (*Order, error) {
@@ -246,6 +253,7 @@ func (s *service) GetOrder(ctx context.Context, userID uint, role string, orderI
 		slog.Warn("get order hidden: foreign draft", "user_id", userID, "order_id", orderID, "owner_id", order.UserID)
 		return nil, ErrNotFound
 	}
+	s.enrichResponseStatus(ctx, order)
 	return order, nil
 }
 
@@ -308,8 +316,44 @@ func (s *service) ApproveOrder(ctx context.Context, userID uint, role string, or
 	}
 
 	order.Status = StatusApproved
+	order.ResponseStatus = ResponseNone
 	order.TotalPrice = &totalPrice
 	return order, nil
+}
+
+func (s *service) enrichResponseStatuses(ctx context.Context, orders []*Order) {
+	for _, order := range orders {
+		s.enrichResponseStatus(ctx, order)
+	}
+}
+
+func (s *service) enrichResponseStatus(ctx context.Context, order *Order) {
+	order.ResponseStatus = ResponseNone
+	if order.Status != StatusSubmitted {
+		return
+	}
+
+	msg, err := s.repo.FindLastMessage(ctx, order.ID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			order.ResponseStatus = ResponseWaitingManager
+			return
+		}
+		slog.Error("response status: find last message failed", "order_id", order.ID, "err", err)
+		return
+	}
+
+	author, err := s.userRepo.FindByID(ctx, msg.UserID)
+	if err != nil {
+		slog.Error("response status: find author failed", "order_id", order.ID, "user_id", msg.UserID, "err", err)
+		return
+	}
+
+	if author.Role == roles.RoleClient {
+		order.ResponseStatus = ResponseWaitingManager
+		return
+	}
+	order.ResponseStatus = ResponseWaitingClient
 }
 
 func (s *service) GetMessages(ctx context.Context, userID uint, role string, orderID uint) ([]Message, error) {
