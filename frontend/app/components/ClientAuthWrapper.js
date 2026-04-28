@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import AuthModal from 'components/AuthModal';
 import { apiFetch } from 'utils/apiClient';
 import { useAuth } from 'utils/useAuth';
 
 export default function ClientAuthWrapper() {
-  const { isAuthenticated, userName, refresh } = useAuth();
+  const { isAuthenticated, userName, isStaff, refresh } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isLoggingOut,    setIsLoggingOut]    = useState(false);
 
@@ -42,22 +43,27 @@ export default function ClientAuthWrapper() {
         </a>
         <div className="dropdown-content">
           {isAuthenticated ? (
-            <button
-              onClick={handleLogout}
-              className="menu-link"
-              type="button"
-              disabled={isLoggingOut}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: isLoggingOut ? 'wait' : 'pointer',
-                width: '100%',
-                textAlign: 'left',
-                opacity: isLoggingOut ? 0.7 : 1,
-              }}
-            >
-              {isLoggingOut ? 'Выход...' : 'Выйти'}
-            </button>
+            <>
+              <Link href="/profile" className="menu-link">
+                Профиль
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="menu-link"
+                type="button"
+                disabled={isLoggingOut}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: isLoggingOut ? 'wait' : 'pointer',
+                  width: '100%',
+                  textAlign: 'left',
+                  opacity: isLoggingOut ? 0.7 : 1,
+                }}
+              >
+                {isLoggingOut ? 'Выход...' : 'Выйти'}
+              </button>
+            </>
           ) : (
             <button
               onClick={() => setIsAuthModalOpen(true)}

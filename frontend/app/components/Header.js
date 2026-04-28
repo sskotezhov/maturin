@@ -3,6 +3,7 @@ import ClientAuthWrapper from 'components/ClientAuthWrapper';
 import CartWidget from 'components/CartWidget';
 import Link from 'next/link';
 import MobileMenu from 'components/MobileMenu';
+import AdminNavItem from 'components/AdminNavItem';
 
 export default function Header() {
   return (
@@ -91,11 +92,7 @@ export default function Header() {
                 </Link>
               </div>
             </div>
-            <div className="menu-item">
-              <Link href="/contacts" className="menu-link">
-                Контакты
-              </Link>
-            </div>
+            <AdminNavItem />
             <CartWidget />
             <ClientAuthWrapper />
           </div>

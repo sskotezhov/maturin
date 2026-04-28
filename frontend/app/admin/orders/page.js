@@ -8,95 +8,93 @@ import Header from 'components/Header';
 import Footer from 'components/Footer';
 
 const STATUS_OPTIONS = [
-  { value: '',          label: 'Все статусы' },
   { value: 'submitted', label: 'На рассмотрении' },
+  { value: '',          label: 'Все статусы' },
   { value: 'approved',  label: 'Одобрено' },
   { value: 'cancelled', label: 'Отменено' },
 ];
 
 const LIMIT_OPTIONS = [10, 20, 50];
 
-export default function OrdersPage() {
-  const { isAuthenticated, userId, isStaff } = useAuth();
+export default function AdminOrdersPage() {
+  const { isAuthenticated, isStaff, userId } = useAuth();
 
-  const [cart,    setCart]    = useState(null);
-  const [orders,  setOrders]  = useState([]);
-  const [total,   setTotal]   = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState(false);
+  const [orders,   setOrders]   = useState([]);
+  const [total,    setTotal]    = useState(0);
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState(false);
 
-  const [status, setStatus] = useState('');
-  const [page,   setPage]   = useState(1);
-  const [limit,  setLimit]  = useState(20);
+  const [status,   setStatus]   = useState('submitted');
+  const [page,     setPage]     = useState(1);
+  const [limit,    setLimit]    = useState(20);
+  const [clientId, setClientId] = useState('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('client_id');
+    if (id) { setClientId(id); setStatus(''); }
+  }, []);
 
   const fetchData = useCallback(async () => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !isStaff) return;
     setLoading(true);
     setError(false);
 
     const params = new URLSearchParams({ page, limit });
-    if (status)             params.set('status',    status);
-    if (isStaff && userId)  params.set('client_id', userId);
+    if (status)   params.set('status',    status);
+    if (clientId) params.set('client_id', clientId);
 
-    const [cartResult, ordersResult] = await Promise.allSettled([
-      apiFetch('/cart'),
-      apiFetch(`/orders?${params}`),
-    ]);
+    const res = await apiFetch(`/orders?${params}`).catch(() => null);
 
-    if (cartResult.status === 'fulfilled' && cartResult.value.ok) {
-      setCart(await cartResult.value.json());
-    } else {
-      setCart(null);
-    }
-
-    if (ordersResult.status === 'rejected') {
+    if (!res || !res.ok) {
       setError(true);
       setLoading(false);
       return;
     }
 
-    const ordersRes = ordersResult.value;
-    if (ordersRes.ok) {
-      const data = await ordersRes.json();
-      if (Array.isArray(data)) {
-        setOrders(data);
-        setTotal(data.length);
-      } else {
-        setOrders(data.items || []);
-        setTotal(data.total ?? (data.items?.length || 0));
-      }
+    const data = await res.json();
+    if (Array.isArray(data)) {
+      setOrders(data);
+      setTotal(data.length);
     } else {
-      setOrders([]);
-      setTotal(0);
+      setOrders(data.items || []);
+      setTotal(data.total ?? (data.items?.length || 0));
     }
-
     setLoading(false);
-  }, [isAuthenticated, isStaff, userId, status, page, limit]);
+  }, [isAuthenticated, isStaff, status, page, limit, clientId]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
   useEffect(() => {
-    const onUpdate = () => fetchData();
-    const onLogout = () => { setCart(null); setOrders([]); setError(false); };
-    window.addEventListener('cart:updated', onUpdate);
-    window.addEventListener('auth:logout',  onLogout);
-    return () => {
-      window.removeEventListener('cart:updated', onUpdate);
-      window.removeEventListener('auth:logout',  onLogout);
-    };
+    window.addEventListener('cart:updated', fetchData);
+    return () => window.removeEventListener('cart:updated', fetchData);
   }, [fetchData]);
 
   const totalPages = limit > 0 ? Math.ceil(total / limit) : 1;
+
+  if (isAuthenticated && !isStaff) {
+    return (
+      <>
+        <Header />
+        <main className="orders-page">
+          <div className="orders-container">
+            <p className="orders-empty">Нет доступа к этой странице.</p>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
 
   return (
     <>
       <Header />
       <main className="orders-page">
         <div className="orders-container">
-          <h1 className="orders-title">Мои заявки</h1>
+          <h1 className="orders-title">Управление заявками</h1>
 
           {!isAuthenticated ? (
-            <p className="orders-empty">Войдите в аккаунт, чтобы просмотреть заявки.</p>
+            <p className="orders-empty">Войдите в аккаунт.</p>
           ) : (
             <>
               <div className="orders-filters">
@@ -119,31 +117,28 @@ export default function OrdersPage() {
                     <option key={l} value={l}>{l} на странице</option>
                   ))}
                 </select>
+
+                <input
+                  type="text"
+                  className="orders-filter-input"
+                  placeholder="ID клиента"
+                  value={clientId}
+                  onChange={(e) => { setClientId(e.target.value); setPage(1); }}
+                />
               </div>
 
               {error && (
                 <p className="orders-error">
-                  Не удалось загрузить заявки. Проверьте подключение и{' '}
-                  <button className="orders-retry-btn" onClick={fetchData}>попробуйте снова</button>.
+                  Не удалось загрузить заявки.{' '}
+                  <button className="orders-retry-btn" onClick={fetchData}>Повторить</button>
                 </p>
-              )}
-
-              {!error && cart && (
-                <section className="orders-section">
-                  <h2 className="orders-section-title">Корзина</h2>
-                  <OrderCard order={cart} currentUserId={userId} isAdmin={false} onAction={fetchData} />
-                </section>
               )}
 
               {!error && (
                 <section className="orders-section">
-                  {cart && orders.length > 0 && (
-                    <h2 className="orders-section-title">История заявок</h2>
-                  )}
-
                   {loading && <p className="orders-loading">Загрузка...</p>}
 
-                  {!loading && orders.length === 0 && !cart && (
+                  {!loading && orders.length === 0 && (
                     <p className="orders-empty">Заявок нет</p>
                   )}
 
@@ -152,7 +147,7 @@ export default function OrdersPage() {
                       key={order.id}
                       order={order}
                       currentUserId={userId}
-                      isAdmin={false}
+                      isAdmin={true}
                       onAction={fetchData}
                     />
                   ))}
