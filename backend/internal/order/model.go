@@ -3,6 +3,7 @@ package order
 import "time"
 
 type Status string
+type ResponseStatus string
 
 const (
 	StatusDraft     Status = "draft"
@@ -11,14 +12,21 @@ const (
 	StatusCancelled Status = "cancelled"
 )
 
+const (
+	ResponseNone           ResponseStatus = "none"
+	ResponseWaitingClient  ResponseStatus = "waiting_client"
+	ResponseWaitingManager ResponseStatus = "waiting_manager"
+)
+
 type Order struct {
-	ID         uint
-	UserID     uint
-	Status     Status
-	TotalPrice *float64
-	Items      []Item
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	ID             uint
+	UserID         uint
+	Status         Status
+	ResponseStatus ResponseStatus
+	TotalPrice     *float64
+	Items          []Item
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 type Item struct {

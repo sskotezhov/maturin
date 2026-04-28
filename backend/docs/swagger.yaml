@@ -152,6 +152,8 @@ definitions:
         items:
           $ref: '#/definitions/order.orderItemResponse'
         type: array
+      response_status:
+        type: string
       status:
         type: string
       total_price:
@@ -370,6 +372,8 @@ definitions:
         items:
           $ref: '#/definitions/staff.orderItemView'
         type: array
+      response_status:
+        type: string
       status:
         type: string
       total_price:

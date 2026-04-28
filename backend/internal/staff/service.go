@@ -124,6 +124,7 @@ func (s *service) GetClient(ctx context.Context, id uint) (*ClientDetails, error
 		slog.Error("staff: list user orders failed", "user_id", id, "err", err)
 		return nil, err
 	}
+	s.enrichOrderResponseStatuses(ctx, orders)
 
 	count, err := s.orderRepo.CountByUserID(ctx, id)
 	if err != nil {
@@ -185,6 +186,36 @@ func (s *service) ChangeRole(ctx context.Context, actorID, targetID uint, newRol
 	}
 	slog.Info("staff: role changed", "actor_id", actorID, "target_id", targetID, "new_role", newRole)
 	return nil
+}
+
+func (s *service) enrichOrderResponseStatuses(ctx context.Context, orders []*order.Order) {
+	for _, o := range orders {
+		o.ResponseStatus = order.ResponseNone
+		if o.Status != order.StatusSubmitted {
+			continue
+		}
+
+		msg, err := s.orderRepo.FindLastMessage(ctx, o.ID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				o.ResponseStatus = order.ResponseWaitingManager
+				continue
+			}
+			slog.Error("staff: find last order message failed", "order_id", o.ID, "err", err)
+			continue
+		}
+
+		author, err := s.userRepo.FindByID(ctx, msg.UserID)
+		if err != nil {
+			slog.Error("staff: find message author failed", "order_id", o.ID, "user_id", msg.UserID, "err", err)
+			continue
+		}
+		if author.Role == roles.RoleClient {
+			o.ResponseStatus = order.ResponseWaitingManager
+		} else {
+			o.ResponseStatus = order.ResponseWaitingClient
+		}
+	}
 }
 
 func (s *service) RefreshCatalog(ctx context.Context) (*CacheStats, error) {

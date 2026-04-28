@@ -69,13 +69,14 @@ type orderItemResponse struct {
 }
 
 type orderResponse struct {
-	ID         uint                `json:"id"`
-	UserID     uint                `json:"user_id"`
-	Status     string              `json:"status"`
-	TotalPrice *float64            `json:"total_price"`
-	Items      []orderItemResponse `json:"items"`
-	CreatedAt  string              `json:"created_at"`
-	UpdatedAt  string              `json:"updated_at"`
+	ID             uint                `json:"id"`
+	UserID         uint                `json:"user_id"`
+	Status         string              `json:"status"`
+	ResponseStatus string              `json:"response_status"`
+	TotalPrice     *float64            `json:"total_price"`
+	Items          []orderItemResponse `json:"items"`
+	CreatedAt      string              `json:"created_at"`
+	UpdatedAt      string              `json:"updated_at"`
 }
 
 type messageResponse struct {
@@ -100,14 +101,22 @@ func toOrderResponse(o *Order) orderResponse {
 		}
 	}
 	return orderResponse{
-		ID:         o.ID,
-		UserID:     o.UserID,
-		Status:     string(o.Status),
-		TotalPrice: o.TotalPrice,
-		Items:      items,
-		CreatedAt:  o.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt:  o.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		ID:             o.ID,
+		UserID:         o.UserID,
+		Status:         string(o.Status),
+		ResponseStatus: responseStatus(o),
+		TotalPrice:     o.TotalPrice,
+		Items:          items,
+		CreatedAt:      o.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt:      o.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
+}
+
+func responseStatus(o *Order) string {
+	if o.ResponseStatus == "" {
+		return string(ResponseNone)
+	}
+	return string(o.ResponseStatus)
 }
 
 func toMessageResponse(m *Message) messageResponse {
