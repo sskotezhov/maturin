@@ -7,6 +7,7 @@ export function useAuth() {
   const [userId,          setUserId]          = useState(null);
   const [userName,        setUserName]        = useState('');
   const [isAdmin,         setIsAdmin]         = useState(false);
+  const [isStaff,         setIsStaff]         = useState(false);
 
   const refresh = useCallback(() => {
     const token = localStorage.getItem('access_token');
@@ -15,14 +16,17 @@ export function useAuth() {
       setUserId(null);
       setUserName('');
       setIsAdmin(false);
+      setIsStaff(false);
       return;
     }
     setIsAuthenticated(true);
     try {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const user  = JSON.parse(localStorage.getItem('user') || '{}');
+      const admin = user.role === 'admin';
       setUserId(user.id || null);
       setUserName(user.email || user.name || 'Пользователь');
-      setIsAdmin(user.role === 'admin');
+      setIsAdmin(admin);
+      setIsStaff(admin || user.role === 'manager');
     } catch (e) {
       console.error('Failed to parse user from localStorage:', e);
     }
@@ -31,7 +35,13 @@ export function useAuth() {
   useEffect(() => {
     refresh();
     const onStorage = (e) => { if (e.key === 'access_token' || e.key === 'user') refresh(); };
-    const onLogout  = () => { setIsAuthenticated(false); setUserId(null); setUserName(''); setIsAdmin(false); };
+    const onLogout  = () => {
+      setIsAuthenticated(false);
+      setUserId(null);
+      setUserName('');
+      setIsAdmin(false);
+      setIsStaff(false);
+    };
     window.addEventListener('storage',     onStorage);
     window.addEventListener('auth:login',  refresh);
     window.addEventListener('auth:logout', onLogout);
@@ -42,5 +52,5 @@ export function useAuth() {
     };
   }, [refresh]);
 
-  return { isAuthenticated, userId, userName, isAdmin, refresh };
+  return { isAuthenticated, userId, userName, isAdmin, isStaff, refresh };
 }

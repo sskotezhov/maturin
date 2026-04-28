@@ -45,8 +45,9 @@ export default function Catalogue({ initialParams, initialProducts = [], initial
   const [total,      setTotal]      = useState(initialTotal);
   const [loading,    setLoading]    = useState(false);
   const [cartState,  setCartState]  = useState({});
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [pendingProduct,  setPendingProduct]  = useState(null);
+  const [isAuthModalOpen,  setIsAuthModalOpen]  = useState(false);
+  const [pendingProduct,   setPendingProduct]   = useState(null);
+  const [pendingCartOpts,  setPendingCartOpts]  = useState({});
 
   const searchTimeout = useRef(null);
   const abortRef      = useRef(null);
@@ -123,9 +124,10 @@ export default function Catalogue({ initialParams, initialProducts = [], initial
     searchTimeout.current = setTimeout(() => setFilter('q', value), 400);
   };
 
-  const handleAddToCart = async (product) => {
+  const handleAddToCart = async (product, { quantity = 1, comment = '' } = {}) => {
     if (!isAuthenticated) {
       setPendingProduct(product);
+      setPendingCartOpts({ quantity, comment });
       setIsAuthModalOpen(true);
       return;
     }
@@ -140,7 +142,8 @@ export default function Catalogue({ initialParams, initialProducts = [], initial
           product_name:   product.full_name || product.name,
           product_code:   product.code || '',
           price_snapshot: product.price || 0,
-          quantity:       1,
+          quantity,
+          comment,
         }),
       });
 
@@ -168,9 +171,11 @@ export default function Catalogue({ initialParams, initialProducts = [], initial
   const handleAuthSuccess = () => {
     setIsAuthModalOpen(false);
     if (pendingProduct) {
-      const p = pendingProduct;
+      const p    = pendingProduct;
+      const opts = pendingCartOpts;
       setPendingProduct(null);
-      handleAddToCart(p);
+      setPendingCartOpts({});
+      handleAddToCart(p, opts);
     }
   };
 

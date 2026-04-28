@@ -2,9 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useAuth } from 'utils/useAuth';
+
 const MobileMenu = () => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [isMobile, setIsMobile] = useState(false);
+    const [isOpen,    setIsOpen]    = useState(false);
+    const [isMobile,  setIsMobile]  = useState(false);
+    const { isStaff } = useAuth();
 
     useEffect(() => {
         const checkIsMobile = () => setIsMobile(window.innerWidth <= 768);
@@ -34,13 +37,6 @@ const MobileMenu = () => {
         return () => window.removeEventListener('keydown', handleEsc);
     }, []);
 
-    const menuItems = [
-        { href: '/', label: 'Главная' },
-        { href: '/software_catalogue', label: 'Оборудование и ПО' },
-        { href: '/contacts', label: 'Контакты' },
-        { href: '/orders', label: 'Заявки' },
-    ];
-
     const closeMenu = () => setIsOpen(false);
 
     if (!isMobile) return null;
@@ -67,16 +63,33 @@ const MobileMenu = () => {
                 </div>
 
                 <nav className="mobile-menu-nav">
-                    {menuItems.map((item) => (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className="mobile-menu-link"
-                            onClick={closeMenu}
-                        >
-                            {item.label}
+                    <Link href="/" className="mobile-menu-link" onClick={closeMenu}>
+                        Главная
+                    </Link>
+                    <Link href="/software_catalogue" className="mobile-menu-link" onClick={closeMenu}>
+                        Оборудование и ПО
+                    </Link>
+                    <Link href="/orders" className="mobile-menu-link" onClick={closeMenu}>
+                        Заявки
+                    </Link>
+
+                    {isStaff ? (
+                            <div className="mobile-menu-link mobile-services-dropdown">
+                            Управление
+                            <div className="mobile-dropdown-content">
+                                <Link href="/admin/orders" onClick={closeMenu}>
+                                    Панель заказов
+                                </Link>
+                                <Link href="/admin/users" onClick={closeMenu}>
+                                    Пользователи
+                                </Link>
+                            </div>
+                        </div>
+                    ) : (
+                        <Link href="/contacts" className="mobile-menu-link" onClick={closeMenu}>
+                            Контакты
                         </Link>
-                    ))}
+                    )}
 
                     <div className="mobile-menu-link mobile-services-dropdown">
                         Услуги

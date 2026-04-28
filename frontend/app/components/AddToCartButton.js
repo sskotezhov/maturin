@@ -10,6 +10,8 @@ export default function AddToCartButton({ product }) {
   const [loading,    setLoading]    = useState(false);
   const [message,    setMessage]    = useState(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [qty,        setQty]        = useState(1);
+  const [comment,    setComment]    = useState('');
 
   const add = async () => {
     if (!isAuthenticated) { setIsAuthOpen(true); return; }
@@ -24,13 +26,16 @@ export default function AddToCartButton({ product }) {
           product_name:   product.full_name || product.name,
           product_code:   product.code || '',
           price_snapshot: product.price || 0,
-          quantity:       1,
+          quantity:       qty,
+          comment,
         }),
       });
 
       if (res.ok) {
         window.dispatchEvent(new Event('cart:updated'));
         setMessage({ text: 'Добавлено в корзину', ok: true });
+        setQty(1);
+        setComment('');
       } else {
         const data = await res.json().catch(() => ({}));
         setMessage({ text: data.detail || 'Ошибка', ok: false });
@@ -45,6 +50,31 @@ export default function AddToCartButton({ product }) {
 
   return (
     <>
+      <div className="product-cart-form">
+        <div className="product-cart-qty">
+          <button
+            className="product-cart-qty-btn"
+            onClick={() => setQty((q) => Math.max(1, q - 1))}
+            disabled={qty <= 1 || loading}
+            aria-label="Уменьшить количество"
+          >−</button>
+          <span className="product-cart-qty-val">{qty}</span>
+          <button
+            className="product-cart-qty-btn"
+            onClick={() => setQty((q) => q + 1)}
+            disabled={loading}
+            aria-label="Увеличить количество"
+          >+</button>
+        </div>
+        <textarea
+          className="product-cart-comment"
+          placeholder="Комментарий (необязательно)"
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          rows={2}
+        />
+      </div>
+
       <button className="product-cart-btn" onClick={add} disabled={loading}>
         {loading ? 'Добавление...' : 'В корзину'}
       </button>
