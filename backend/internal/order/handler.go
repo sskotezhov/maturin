@@ -262,7 +262,7 @@ func (h *Handler) submit(c echo.Context) error {
 // @Summary     List orders
 // @Tags        orders
 // @Produce     json
-// @Param       status   query string false "Filter by status (draft, submitted, approved, cancelled)"
+// @Param       status   query string false "Filter by status (draft, submitted, approved, cancelled); manager/admin see draft only for themselves"
 // @Param       user_id  query int    false "Filter by client user ID (manager/admin only)"
 // @Param       page     query int    false "Page number (default 1)"
 // @Param       limit    query int    false "Items per page (default 20)"

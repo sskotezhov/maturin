@@ -226,6 +226,8 @@ func (s *service) GetOrders(ctx context.Context, userID uint, role string, f Fil
 	}
 	if role == string(roles.RoleClient) {
 		f.UserID = userID
+	} else if role == string(roles.RoleManager) || role == string(roles.RoleAdmin) {
+		f.DraftVisibleToUserID = userID
 	}
 	return s.repo.FindFiltered(ctx, f)
 }
@@ -238,6 +240,11 @@ func (s *service) GetOrder(ctx context.Context, userID uint, role string, orderI
 	if role == string(roles.RoleClient) && order.UserID != userID {
 		slog.Warn("get order forbidden", "user_id", userID, "order_id", orderID)
 		return nil, ErrForbidden
+	}
+	if (role == string(roles.RoleManager) || role == string(roles.RoleAdmin)) &&
+		order.Status == StatusDraft && order.UserID != userID {
+		slog.Warn("get order hidden: foreign draft", "user_id", userID, "order_id", orderID, "owner_id", order.UserID)
+		return nil, ErrNotFound
 	}
 	return order, nil
 }

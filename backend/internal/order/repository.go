@@ -8,10 +8,11 @@ import (
 )
 
 type Filter struct {
-	Status string
-	UserID uint
-	Page   int
-	Limit  int
+	Status               string
+	UserID               uint
+	DraftVisibleToUserID uint
+	Page                 int
+	Limit                int
 }
 
 type Repository interface {
@@ -144,6 +145,9 @@ func (r *repository) FindFiltered(ctx context.Context, f Filter) ([]*Order, erro
 	if f.UserID != 0 {
 		q = q.Where("user_id = ?", f.UserID)
 	}
+	if f.DraftVisibleToUserID != 0 {
+		q = q.Where("(status <> ? OR user_id = ?)", string(StatusDraft), f.DraftVisibleToUserID)
+	}
 	if f.Status != "" {
 		q = q.Where("status = ?", f.Status)
 	}
@@ -251,6 +255,7 @@ func (r *repository) FindMessages(ctx context.Context, orderID uint) ([]Message,
 func (r *repository) FindByUserID(ctx context.Context, userID uint, limit int) ([]*Order, error) {
 	q := r.db.WithContext(ctx).Preload("Items").
 		Where("user_id = ?", userID).
+		Where("status <> ?", string(StatusDraft)).
 		Order("created_at desc")
 	if limit > 0 {
 		q = q.Limit(limit)
@@ -270,6 +275,7 @@ func (r *repository) CountByUserID(ctx context.Context, userID uint) (int, error
 	var count int64
 	err := r.db.WithContext(ctx).Model(&orderRecord{}).
 		Where("user_id = ?", userID).
+		Where("status <> ?", string(StatusDraft)).
 		Count(&count).Error
 	return int(count), err
 }
