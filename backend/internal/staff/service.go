@@ -8,6 +8,7 @@ import (
 
 	"gorm.io/gorm"
 
+	"github.com/sskotezhov/maturin/internal/inquiry"
 	"github.com/sskotezhov/maturin/internal/order"
 	"github.com/sskotezhov/maturin/internal/user"
 	"github.com/sskotezhov/maturin/pkg/roles"
@@ -20,9 +21,10 @@ const (
 )
 
 var (
-	ErrNotFound       = errors.New("not found")
-	ErrInvalidRole    = errors.New("invalid role")
-	ErrSelfRoleChange = errors.New("cannot change own role")
+	ErrNotFound             = errors.New("not found")
+	ErrInvalidRole          = errors.New("invalid role")
+	ErrInvalidInquiryStatus = errors.New("invalid inquiry status")
+	ErrSelfRoleChange       = errors.New("cannot change own role")
 )
 
 type ClientFilter struct {
@@ -60,19 +62,29 @@ type Service interface {
 	Dashboard(ctx context.Context) (*Dashboard, error)
 	ChangeRole(ctx context.Context, actorID, targetID uint, newRole roles.Role) error
 	RefreshCatalog(ctx context.Context) (*CacheStats, error)
+	ListInquiries(ctx context.Context, f inquiry.Filter) ([]*inquiry.Inquiry, int, error)
+	GetInquiry(ctx context.Context, id uint) (*inquiry.Inquiry, error)
+	ChangeInquiryStatus(ctx context.Context, id uint, status inquiry.Status) error
 }
 
 type service struct {
-	userRepo   user.Repository
-	orderRepo  order.Repository
-	productSvc productService
+	userRepo    user.Repository
+	orderRepo   order.Repository
+	productSvc  productService
+	inquiryRepo inquiry.Repository
 }
 
-func NewService(userRepo user.Repository, orderRepo order.Repository, productSvc productService) Service {
+func NewService(
+	userRepo user.Repository,
+	orderRepo order.Repository,
+	productSvc productService,
+	inquiryRepo inquiry.Repository,
+) Service {
 	return &service{
-		userRepo:   userRepo,
-		orderRepo:  orderRepo,
-		productSvc: productSvc,
+		userRepo:    userRepo,
+		orderRepo:   orderRepo,
+		productSvc:  productSvc,
+		inquiryRepo: inquiryRepo,
 	}
 }
 
@@ -191,4 +203,50 @@ func (s *service) RefreshCatalog(ctx context.Context) (*CacheStats, error) {
 		ProductsCount:   products,
 		CategoriesCount: cats,
 	}, nil
+}
+
+func (s *service) ListInquiries(ctx context.Context, f inquiry.Filter) ([]*inquiry.Inquiry, int, error) {
+	if f.Limit <= 0 {
+		f.Limit = 20
+	}
+	if f.Page < 1 {
+		f.Page = 1
+	}
+	if f.Status != "" && !inquiry.ValidStatus(f.Status) {
+		return nil, 0, ErrInvalidInquiryStatus
+	}
+
+	items, total, err := s.inquiryRepo.FindFiltered(ctx, f)
+	if err != nil {
+		slog.Error("staff: list inquiries failed", "err", err)
+		return nil, 0, err
+	}
+	return items, total, nil
+}
+
+func (s *service) GetInquiry(ctx context.Context, id uint) (*inquiry.Inquiry, error) {
+	item, err := s.inquiryRepo.FindByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		slog.Error("staff: find inquiry failed", "inquiry_id", id, "err", err)
+		return nil, err
+	}
+	return item, nil
+}
+
+func (s *service) ChangeInquiryStatus(ctx context.Context, id uint, status inquiry.Status) error {
+	if !inquiry.ValidStatus(string(status)) {
+		return ErrInvalidInquiryStatus
+	}
+	if err := s.inquiryRepo.UpdateStatus(ctx, id, status); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrNotFound
+		}
+		slog.Error("staff: update inquiry status failed", "inquiry_id", id, "status", status, "err", err)
+		return err
+	}
+	slog.Info("staff: inquiry status changed", "inquiry_id", id, "status", status)
+	return nil
 }

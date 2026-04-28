@@ -13,6 +13,7 @@ import (
 
 	"github.com/sskotezhov/maturin/config"
 	"github.com/sskotezhov/maturin/internal/auth"
+	"github.com/sskotezhov/maturin/internal/inquiry"
 	"github.com/sskotezhov/maturin/internal/order"
 	"github.com/sskotezhov/maturin/internal/product"
 	"github.com/sskotezhov/maturin/internal/staff"
@@ -78,6 +79,11 @@ func New(cfg *config.Config, db *gorm.DB, rdb *redis.Client) (*App, error) {
 	productSvc := product.NewService(productRepo)
 	productHandler := product.NewHandler(productSvc)
 
+	// public inquiries
+	inquiryRepo := inquiry.NewRepository(db)
+	inquirySvc := inquiry.NewService(inquiryRepo, userRepo, emailSender)
+	inquiryHandler := inquiry.NewHandler(inquirySvc)
+
 	// swagger
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
@@ -92,6 +98,7 @@ func New(cfg *config.Config, db *gorm.DB, rdb *redis.Client) (*App, error) {
 	auth.NewHandler(authSvc).Register(api.Group("/auth"))
 	productHandler.Register(api.Group("/products"))
 	productHandler.RegisterCategories(api.Group("/categories"))
+	inquiryHandler.Register(api.Group("/inquiries"))
 
 	authed := api.Group("", mw.JWTAuth(jwtCfg.Secret))
 	user.NewHandler(userSvc).Register(authed.Group("/user"))
@@ -99,7 +106,7 @@ func New(cfg *config.Config, db *gorm.DB, rdb *redis.Client) (*App, error) {
 	cartHandler.RegisterOrders(authed.Group("/orders"))
 
 	// staff (manager + admin)
-	staffSvc := staff.NewService(userRepo, cartRepo, productSvc)
+	staffSvc := staff.NewService(userRepo, cartRepo, productSvc, inquiryRepo)
 	staffHandler := staff.NewHandler(staffSvc)
 	staffHandler.Register(authed.Group("/staff", mw.RequireRoles(roles.RoleManager, roles.RoleAdmin)))
 
@@ -122,6 +129,9 @@ func New(cfg *config.Config, db *gorm.DB, rdb *redis.Client) (*App, error) {
 
 func migrate(db *gorm.DB) error {
 	if err := user.Migrate(db); err != nil {
+		return err
+	}
+	if err := inquiry.Migrate(db); err != nil {
 		return err
 	}
 	return order.Migrate(db)
