@@ -18,27 +18,18 @@ function formatPrice(price) {
 }
 
 export default function ProductCard({ product, onAddToCart, cartState }) {
-  const [formOpen, setFormOpen] = useState(false);
-  const [qty,      setQty]      = useState(1);
-  const [comment,  setComment]  = useState('');
+  const [qty,     setQty]     = useState(1);
+  const [comment, setComment] = useState('');
 
   const state = cartState[product.id] || {};
   const name  = product.full_name || product.name;
 
   useEffect(() => {
     if (state.message && !state.isError) {
-      setFormOpen(false);
       setQty(1);
       setComment('');
     }
   }, [state.message, state.isError]);
-
-  const handleOpen = () => {
-    if (state.loading) return;
-    setQty(1);
-    setComment('');
-    setFormOpen(true);
-  };
 
   const handleConfirm = () => {
     onAddToCart(product, { quantity: qty, comment });
@@ -85,19 +76,9 @@ export default function ProductCard({ product, onAddToCart, cartState }) {
           )}
         </div>
 
-        {!formOpen ? (
-          <div className="catalogue-card-actions">
-            <button
-              className="catalogue-card-btn"
-              onClick={handleOpen}
-              disabled={state.loading}
-              aria-label={`Добавить ${name} в корзину`}
-            >
-              {state.loading ? '...' : 'В корзину'}
-            </button>
-          </div>
-        ) : (
-          <div className="catalogue-card-add-form">
+        <div className="catalogue-card-add-form">
+          <div className="catalogue-card-qty-row">
+            <span className="catalogue-card-qty-label">Количество:</span>
             <div className="catalogue-card-add-qty">
               <button
                 className="catalogue-card-qty-btn"
@@ -112,30 +93,23 @@ export default function ProductCard({ product, onAddToCart, cartState }) {
                 aria-label="Увеличить количество"
               >+</button>
             </div>
-            <textarea
-              className="catalogue-card-add-comment"
-              placeholder="Комментарий (необязательно)"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              rows={2}
-            />
-            <div className="catalogue-card-add-actions">
-              <button
-                className="catalogue-card-btn"
-                onClick={handleConfirm}
-                disabled={state.loading}
-              >
-                {state.loading ? '...' : 'Добавить'}
-              </button>
-              <button
-                className="catalogue-card-btn-cancel"
-                onClick={() => setFormOpen(false)}
-              >
-                Отмена
-              </button>
-            </div>
           </div>
-        )}
+          <textarea
+            className="catalogue-card-add-comment"
+            placeholder="Комментарий (необязательно)"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            rows={2}
+          />
+          <button
+            className="catalogue-card-btn catalogue-card-btn-full"
+            onClick={handleConfirm}
+            disabled={state.loading}
+            aria-label={`Добавить ${name} в корзину`}
+          >
+            {state.loading ? '...' : 'В корзину'}
+          </button>
+        </div>
       </div>
 
       {state.message && (
