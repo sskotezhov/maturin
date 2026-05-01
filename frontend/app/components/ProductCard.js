@@ -77,23 +77,25 @@ export default function ProductCard({ product, onAddToCart, cartState }) {
         </div>
 
         <div className="catalogue-card-add-form">
-          <div className="catalogue-card-qty-row">
-            <span className="catalogue-card-qty-label">Количество:</span>
-            <div className="catalogue-card-add-qty">
-              <button
-                className="catalogue-card-qty-btn"
-                onClick={() => setQty((q) => Math.max(1, q - 1))}
-                disabled={qty <= 1}
-                aria-label="Уменьшить количество"
-              >−</button>
-              <span className="catalogue-card-qty-val">{qty}</span>
-              <button
-                className="catalogue-card-qty-btn"
-                onClick={() => setQty((q) => q + 1)}
-                aria-label="Увеличить количество"
-              >+</button>
+          {product.type !== 'Услуга' && (
+            <div className="catalogue-card-qty-row">
+              <span className="catalogue-card-qty-label">Количество:</span>
+              <div className="catalogue-card-add-qty">
+                <button
+                  className="catalogue-card-qty-btn"
+                  onClick={() => setQty((q) => Math.max(1, q - 1))}
+                  disabled={qty <= 1}
+                  aria-label="Уменьшить количество"
+                >−</button>
+                <span className="catalogue-card-qty-val">{qty}</span>
+                <button
+                  className="catalogue-card-qty-btn"
+                  onClick={() => setQty((q) => q + 1)}
+                  aria-label="Увеличить количество"
+                >+</button>
+              </div>
             </div>
-          </div>
+          )}
           <textarea
             className="catalogue-card-add-comment"
             placeholder="Комментарий (необязательно)"

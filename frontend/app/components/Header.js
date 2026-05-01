@@ -52,9 +52,6 @@ export default function Header() {
               </div>
               <div>8 (8672) 91-30-10</div>
             </div>
-            <Link href="#consultation" className="capsule">
-              <b>ЗАКАЗАТЬ ЗВОНОК</b>
-            </Link>
           </div>
         </div>
         <nav className="bottom">
@@ -69,28 +66,6 @@ export default function Header() {
               <Link href="/software_catalogue" className="menu-link">
                 Оборудование и ПО
               </Link>
-            </div>
-            <div className="menu-item">
-              <Link href="/services" className="menu-link">
-                Услуги
-              </Link>
-              <div className="dropdown-content">
-                <Link
-                  href="/automatication_business_processes"
-                  className="menu-link"
-                >
-                  Автоматизация бизнес процессов
-                </Link>
-                <Link href="/mark" className="menu-link">
-                  Честный знак
-                </Link>
-                <Link href="/accounting" className="menu-link">
-                  Бухгалтерский, налоговый, управленческий, кадровый учет
-                </Link>
-                <Link href="/signature" className="menu-link">
-                  Получение электронной подписи
-                </Link>
-              </div>
             </div>
             <AdminNavItem />
             <CartWidget />
