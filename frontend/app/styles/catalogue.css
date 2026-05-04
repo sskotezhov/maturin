@@ -210,18 +210,18 @@
 
 .catalogue-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
 }
 
 .catalogue-card {
   background: var(--color-white);
   border: 1px solid rgba(102, 68, 170, 0.12);
   border-radius: 16px;
-  padding: 18px;
+  padding: 22px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
   transition: box-shadow 0.2s, transform 0.2s;
 }
 
@@ -385,7 +385,28 @@
 .catalogue-card-add-form {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+}
+
+.catalogue-card-qty-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.catalogue-card-qty-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-black);
+  opacity: 0.6;
+  white-space: nowrap;
+}
+
+.catalogue-card-btn-full {
+  width: 100%;
+  padding: 11px 16px;
+  font-size: 14px;
 }
 
 .catalogue-card-add-qty {
@@ -552,9 +573,19 @@
   padding: 0 4px;
 }
 
+@media (max-width: 1200px) {
+  .catalogue-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 @media (max-width: 900px) {
   .catalogue-group-search {
     flex: 1 1 100%;
+  }
+
+  .catalogue-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
