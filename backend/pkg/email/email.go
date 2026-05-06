@@ -37,6 +37,14 @@ func (s *Sender) SendNewMessage(to string, orderID uint) error {
 	return s.send(to, fmt.Sprintf("Новое сообщение в заявке #%d — Матурин", orderID), body)
 }
 
+func (s *Sender) SendOrderModified(to string, orderID uint) error {
+	body := buildOrderEmailHTML(
+		"Заявка изменена",
+		fmt.Sprintf("Менеджер внёс изменения в вашу заявку #%d. Войдите в систему для просмотра.", orderID),
+	)
+	return s.send(to, fmt.Sprintf("Изменения в заявке #%d — Матурин", orderID), body)
+}
+
 func buildInquiryEmailHTML(inquiryID uint, name, phone, comment string) string {
 	comment = strings.TrimSpace(comment)
 	if comment == "" {
