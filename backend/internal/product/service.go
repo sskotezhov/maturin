@@ -5,6 +5,7 @@ import (
 	"errors"
 	"sort"
 	"strings"
+	"time"
 )
 
 var ErrNotFound = errors.New("product not found")
@@ -35,6 +36,7 @@ type Service interface {
 	GetProduct(ctx context.Context, id string) (*Product, error)
 	ListCategories(ctx context.Context) ([]Category, error)
 	RefreshCache(ctx context.Context) (productsCount, categoriesCount int, err error)
+	GetCacheSyncedAt(ctx context.Context) (*time.Time, error)
 }
 
 type service struct {
@@ -119,6 +121,10 @@ func (s *service) ListCategories(ctx context.Context) ([]Category, error) {
 
 func (s *service) RefreshCache(ctx context.Context) (int, int, error) {
 	return s.repo.RefreshCache(ctx)
+}
+
+func (s *service) GetCacheSyncedAt(ctx context.Context) (*time.Time, error) {
+	return s.repo.GetCacheSyncedAt(ctx)
 }
 
 func matchSearch(p Product, q string) bool {

@@ -106,7 +106,7 @@ func New(cfg *config.Config, db *gorm.DB, rdb *redis.Client) (*App, error) {
 	cartHandler.RegisterOrders(authed.Group("/orders"))
 
 	// staff (manager + admin)
-	staffSvc := staff.NewService(userRepo, cartRepo, productSvc, inquiryRepo)
+	staffSvc := staff.NewService(userRepo, cartRepo, cartSvc, productSvc, inquiryRepo)
 	staffHandler := staff.NewHandler(staffSvc)
 	staffHandler.Register(authed.Group("/staff", mw.RequireRoles(roles.RoleManager, roles.RoleAdmin)))
 

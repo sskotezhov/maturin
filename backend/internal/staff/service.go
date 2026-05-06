@@ -44,6 +44,7 @@ type ClientDetails struct {
 type Dashboard struct {
 	OrdersByStatus      map[string]int
 	StaleSubmittedCount int
+	CatalogSyncedAt     *time.Time
 }
 
 type CacheStats struct {
@@ -54,6 +55,7 @@ type CacheStats struct {
 
 type productService interface {
 	RefreshCache(ctx context.Context) (int, int, error)
+	GetCacheSyncedAt(ctx context.Context) (*time.Time, error)
 }
 
 type Service interface {
@@ -65,11 +67,15 @@ type Service interface {
 	ListInquiries(ctx context.Context, f inquiry.Filter) ([]*inquiry.Inquiry, int, error)
 	GetInquiry(ctx context.Context, id uint) (*inquiry.Inquiry, error)
 	ChangeInquiryStatus(ctx context.Context, id uint, status inquiry.Status) error
+	StaffAddItem(ctx context.Context, actorID, orderID uint, input order.AddItemInput) (*order.Order, error)
+	StaffUpdateItem(ctx context.Context, actorID, orderID uint, itemID uint, input order.UpdateItemInput) (*order.Order, error)
+	StaffDeleteItem(ctx context.Context, actorID, orderID uint, itemID uint) error
 }
 
 type service struct {
 	userRepo    user.Repository
 	orderRepo   order.Repository
+	orderSvc    order.Service
 	productSvc  productService
 	inquiryRepo inquiry.Repository
 }
@@ -77,12 +83,14 @@ type service struct {
 func NewService(
 	userRepo user.Repository,
 	orderRepo order.Repository,
+	orderSvc order.Service,
 	productSvc productService,
 	inquiryRepo inquiry.Repository,
 ) Service {
 	return &service{
 		userRepo:    userRepo,
 		orderRepo:   orderRepo,
+		orderSvc:    orderSvc,
 		productSvc:  productSvc,
 		inquiryRepo: inquiryRepo,
 	}
@@ -167,9 +175,15 @@ func (s *service) Dashboard(ctx context.Context) (*Dashboard, error) {
 		out[string(k)] = v
 	}
 
+	syncedAt, err := s.productSvc.GetCacheSyncedAt(ctx)
+	if err != nil {
+		slog.Debug("staff: catalog synced_at not set", "err", err)
+	}
+
 	return &Dashboard{
 		OrdersByStatus:      out,
 		StaleSubmittedCount: stale,
+		CatalogSyncedAt:     syncedAt,
 	}, nil
 }
 
@@ -276,6 +290,18 @@ func (s *service) GetInquiry(ctx context.Context, id uint) (*inquiry.Inquiry, er
 		return nil, err
 	}
 	return item, nil
+}
+
+func (s *service) StaffAddItem(ctx context.Context, actorID, orderID uint, input order.AddItemInput) (*order.Order, error) {
+	return s.orderSvc.StaffAddItem(ctx, actorID, orderID, input)
+}
+
+func (s *service) StaffUpdateItem(ctx context.Context, actorID, orderID uint, itemID uint, input order.UpdateItemInput) (*order.Order, error) {
+	return s.orderSvc.StaffUpdateItem(ctx, actorID, orderID, itemID, input)
+}
+
+func (s *service) StaffDeleteItem(ctx context.Context, actorID, orderID uint, itemID uint) error {
+	return s.orderSvc.StaffDeleteItem(ctx, actorID, orderID, itemID)
 }
 
 func (s *service) ChangeInquiryStatus(ctx context.Context, id uint, status inquiry.Status) error {

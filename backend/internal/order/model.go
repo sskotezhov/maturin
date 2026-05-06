@@ -1,6 +1,11 @@
 package order
 
-import "time"
+import (
+	"errors"
+	"time"
+)
+
+var ErrOrderNotEditable = errors.New("order cannot be edited in current status")
 
 type UserInfo struct {
 	ID          uint
