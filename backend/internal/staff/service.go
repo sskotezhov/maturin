@@ -125,6 +125,17 @@ func (s *service) GetClient(ctx context.Context, id uint) (*ClientDetails, error
 		return nil, err
 	}
 	s.enrichOrderResponseStatuses(ctx, orders)
+	userInfo := &order.UserInfo{
+		ID:          u.ID,
+		Email:       u.Email,
+		LastName:    u.LastName,
+		FirstName:   u.FirstName,
+		Phone:       u.Phone,
+		CompanyName: u.CompanyName,
+	}
+	for _, o := range orders {
+		o.User = userInfo
+	}
 
 	count, err := s.orderRepo.CountByUserID(ctx, id)
 	if err != nil {

@@ -69,9 +69,18 @@ type orderItemView struct {
 	Comment       string   `json:"comment"`
 }
 
+type userInfoView struct {
+	ID          uint   `json:"id"`
+	Email       string `json:"email"`
+	LastName    string `json:"last_name"`
+	FirstName   string `json:"first_name"`
+	Phone       string `json:"phone"`
+	CompanyName string `json:"company_name"`
+}
+
 type orderView struct {
 	ID             uint            `json:"id"`
-	UserID         uint            `json:"user_id"`
+	User           *userInfoView   `json:"user"`
 	Status         string          `json:"status"`
 	ResponseStatus string          `json:"response_status"`
 	TotalPrice     *float64        `json:"total_price"`
@@ -157,9 +166,20 @@ func toOrderView(o *order.Order) orderView {
 			Comment:       item.Comment,
 		}
 	}
+	var u *userInfoView
+	if o.User != nil {
+		u = &userInfoView{
+			ID:          o.User.ID,
+			Email:       o.User.Email,
+			LastName:    o.User.LastName,
+			FirstName:   o.User.FirstName,
+			Phone:       o.User.Phone,
+			CompanyName: o.User.CompanyName,
+		}
+	}
 	return orderView{
 		ID:             o.ID,
-		UserID:         o.UserID,
+		User:           u,
 		Status:         string(o.Status),
 		ResponseStatus: orderResponseStatus(o),
 		TotalPrice:     o.TotalPrice,

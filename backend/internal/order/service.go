@@ -236,6 +236,7 @@ func (s *service) GetOrders(ctx context.Context, userID uint, role string, f Fil
 		return nil, err
 	}
 	s.enrichResponseStatuses(ctx, orders)
+	s.enrichUsers(ctx, orders)
 	return orders, nil
 }
 
@@ -254,6 +255,7 @@ func (s *service) GetOrder(ctx context.Context, userID uint, role string, orderI
 		return nil, ErrNotFound
 	}
 	s.enrichResponseStatus(ctx, order)
+	s.enrichUser(ctx, order)
 	return order, nil
 }
 
@@ -324,6 +326,51 @@ func (s *service) ApproveOrder(ctx context.Context, userID uint, role string, or
 func (s *service) enrichResponseStatuses(ctx context.Context, orders []*Order) {
 	for _, order := range orders {
 		s.enrichResponseStatus(ctx, order)
+	}
+}
+
+func (s *service) enrichUsers(ctx context.Context, orders []*Order) {
+	seen := map[uint]bool{}
+	ids := make([]uint, 0, len(orders))
+	for _, o := range orders {
+		if !seen[o.UserID] {
+			ids = append(ids, o.UserID)
+			seen[o.UserID] = true
+		}
+	}
+	users, err := s.userRepo.FindByIDs(ctx, ids)
+	if err != nil {
+		slog.Error("enrich users failed", "err", err)
+		return
+	}
+	byID := make(map[uint]*user.User, len(users))
+	for _, u := range users {
+		byID[u.ID] = u
+	}
+	for _, o := range orders {
+		if u, ok := byID[o.UserID]; ok {
+			o.User = toUserInfo(u)
+		}
+	}
+}
+
+func (s *service) enrichUser(ctx context.Context, o *Order) {
+	u, err := s.userRepo.FindByID(ctx, o.UserID)
+	if err != nil {
+		slog.Error("enrich user failed", "order_id", o.ID, "user_id", o.UserID, "err", err)
+		return
+	}
+	o.User = toUserInfo(u)
+}
+
+func toUserInfo(u *user.User) *UserInfo {
+	return &UserInfo{
+		ID:          u.ID,
+		Email:       u.Email,
+		LastName:    u.LastName,
+		FirstName:   u.FirstName,
+		Phone:       u.Phone,
+		CompanyName: u.CompanyName,
 	}
 }
 
