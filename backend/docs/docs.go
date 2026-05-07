@@ -2858,6 +2858,9 @@ const docTemplate = `{
         "slot.bookRequest": {
             "type": "object",
             "properties": {
+                "comment": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },

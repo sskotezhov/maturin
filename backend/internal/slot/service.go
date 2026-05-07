@@ -3,8 +3,11 @@ package slot
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"strings"
 	"time"
+
+	"github.com/sskotezhov/maturin/internal/inquiry"
 )
 
 const (
@@ -31,8 +34,9 @@ type RangeInput struct {
 }
 
 type BookInput struct {
-	Name  string
-	Phone string
+	Name    string
+	Phone   string
+	Comment string
 }
 
 type Service interface {
@@ -45,11 +49,12 @@ type Service interface {
 }
 
 type service struct {
-	repo Repository
+	repo        Repository
+	inquiryRepo inquiry.Repository
 }
 
-func NewService(repo Repository) Service {
-	return &service{repo: repo}
+func NewService(repo Repository, inquiryRepo inquiry.Repository) Service {
+	return &service{repo: repo, inquiryRepo: inquiryRepo}
 }
 
 func (s *service) CreateRanges(ctx context.Context, ranges []RangeInput) (int, error) {
@@ -98,6 +103,19 @@ func (s *service) Book(ctx context.Context, slotID uint, input BookInput) (*Call
 	if err := s.repo.Book(ctx, slotID, booking); err != nil {
 		return nil, err
 	}
+
+	inq := &inquiry.Inquiry{
+		Name:            name,
+		Phone:           phone,
+		PhoneDigits:     digits,
+		Comment:         input.Comment,
+		ConsentAccepted: true,
+		SlotID:          &slotID,
+	}
+	if err := s.inquiryRepo.Create(ctx, inq); err != nil {
+		slog.Error("slot: failed to create inquiry for booking", "slot_id", slotID, "err", err)
+	}
+
 	return booking, nil
 }
 

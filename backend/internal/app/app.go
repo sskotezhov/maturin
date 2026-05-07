@@ -120,7 +120,7 @@ func New(cfg *config.Config, db *gorm.DB, rdb *redis.Client) (*App, error) {
 
 	// slots
 	slotRepo := slot.NewRepository(db)
-	slotSvc := slot.NewService(slotRepo)
+	slotSvc := slot.NewService(slotRepo, inquiryRepo)
 	slotHandler := slot.NewHandler(slotSvc)
 	slotHandler.RegisterPublic(api.Group("/slots"))
 	slotHandler.RegisterStaff(authed.Group("/staff/slots", mw.RequireRoles(roles.RoleManager, roles.RoleAdmin)))

@@ -45,8 +45,9 @@ type slotView struct {
 }
 
 type bookRequest struct {
-	Name  string `json:"name"`
-	Phone string `json:"phone"`
+	Name    string `json:"name"`
+	Phone   string `json:"phone"`
+	Comment string `json:"comment"`
 }
 
 type bookResponse struct {
@@ -159,7 +160,7 @@ func (h *Handler) book(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, echo.Map{"error": "invalid request"})
 	}
 
-	booking, err := h.svc.Book(c.Request().Context(), id, BookInput{Name: req.Name, Phone: req.Phone})
+	booking, err := h.svc.Book(c.Request().Context(), id, BookInput{Name: req.Name, Phone: req.Phone, Comment: req.Comment})
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrInvalidName):

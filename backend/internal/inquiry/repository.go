@@ -31,6 +31,7 @@ type inquiryRecord struct {
 	Source          string `gorm:"not null;default:''"`
 	PageURL         string `gorm:"not null;default:''"`
 	ConsentAccepted bool   `gorm:"not null;default:false"`
+	SlotID          *uint  `gorm:"index"`
 	Status          string `gorm:"type:varchar(20);not null;default:'new';index"`
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
@@ -139,6 +140,7 @@ func toDB(item *Inquiry) inquiryRecord {
 		Source:          item.Source,
 		PageURL:         item.PageURL,
 		ConsentAccepted: item.ConsentAccepted,
+		SlotID:          item.SlotID,
 		Status:          string(status),
 	}
 }
@@ -153,6 +155,7 @@ func toEntity(rec inquiryRecord) *Inquiry {
 		Source:          rec.Source,
 		PageURL:         rec.PageURL,
 		ConsentAccepted: rec.ConsentAccepted,
+		SlotID:          rec.SlotID,
 		Status:          Status(rec.Status),
 		CreatedAt:       rec.CreatedAt,
 		UpdatedAt:       rec.UpdatedAt,

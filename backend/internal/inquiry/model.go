@@ -28,6 +28,7 @@ type Inquiry struct {
 	Source          string    `json:"source"`
 	PageURL         string    `json:"page_url"`
 	ConsentAccepted bool      `json:"consent_accepted"`
+	SlotID          *uint     `json:"slot_id,omitempty"`
 	Status          Status    `json:"status"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
