@@ -168,3 +168,20 @@
 .footer .container .consultation .center .form .center .agreement a:hover {
   opacity: 0.8;
 }
+
+.footer-submit-btn {
+  border: none;
+  cursor: pointer;
+}
+
+.footer-form-error {
+  color: #ff3b30;
+  background-color: rgba(255, 59, 48, 0.15);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  margin: -10px 0 0;
+  width: 860px;
+  box-sizing: border-box;
+  text-align: center;
+}

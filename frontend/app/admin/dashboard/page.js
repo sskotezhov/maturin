@@ -176,13 +176,6 @@ export default function AdminDashboardPage() {
                       <span className="dashboard-stat-label">На рассмотрении</span>
                     </Link>
 
-                    {stale > 0 && (
-                      <Link href="/admin/orders?status=submitted" className="dashboard-stat-card dashboard-stat-stale">
-                        <span className="dashboard-stat-value">{stale}</span>
-                        <span className="dashboard-stat-label">Просрочено</span>
-                      </Link>
-                    )}
-
                     <Link href="/admin/orders?status=approved" className="dashboard-stat-card dashboard-stat-approved">
                       <span className="dashboard-stat-value">{approved}</span>
                       <span className="dashboard-stat-label">Одобрено</span>

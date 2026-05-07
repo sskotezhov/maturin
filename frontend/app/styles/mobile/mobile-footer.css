@@ -56,6 +56,10 @@
         text-align: center;
     }
 
+    .footer-form-error {
+        width: 100% !important;
+    }
+
     .footer .container .footer-bottom .content {
         flex-direction: column;
         text-align: center;
