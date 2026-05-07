@@ -175,8 +175,269 @@
   }
 }
 
-/* ── Users panel ─────────────────────────────────────────── */
+.calls-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 24px;
+  border-bottom: 2px solid rgba(102, 68, 170, 0.1);
+  padding-bottom: 0;
+}
 
+.calls-tab-btn {
+  padding: 9px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  background: none;
+  color: var(--color-black);
+  opacity: 0.5;
+  cursor: pointer;
+  transition: color 0.15s, opacity 0.15s, border-color 0.15s;
+  border-radius: 8px 8px 0 0;
+}
+
+.calls-tab-btn:hover {
+  opacity: 0.8;
+  color: var(--color-purple);
+}
+
+.calls-tab-btn.active {
+  color: var(--color-purple);
+  opacity: 1;
+  border-bottom-color: var(--color-purple);
+}
+
+.calls-table-wrap {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(102, 68, 170, 0.12);
+  margin-bottom: 16px;
+}
+
+.calls-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.calls-table thead tr {
+  background: rgba(102, 68, 170, 0.04);
+}
+
+.calls-table th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-black);
+  opacity: 0.45;
+  white-space: nowrap;
+}
+
+.calls-table td {
+  padding: 10px 14px;
+  border-top: 1px solid rgba(102, 68, 170, 0.07);
+  color: var(--color-black);
+  white-space: nowrap;
+}
+
+.calls-table tbody tr:hover {
+  background: rgba(102, 68, 170, 0.03);
+}
+
+.calls-td-muted {
+  opacity: 0.35;
+  font-size: 12px;
+}
+
+.calls-status-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.calls-status-badge.free   { background: rgba(39, 168, 74, 0.12);  color: #27a84a; }
+.calls-status-badge.booked { background: rgba(102, 68, 170, 0.1);  color: var(--color-purple); }
+
+.calls-delete-btn {
+  padding: 5px 11px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  border: 1.5px solid rgba(255, 59, 48, 0.3);
+  border-radius: 8px;
+  background: none;
+  color: #ff3b30;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.calls-delete-btn:hover:not(:disabled) {
+  background: rgba(255, 59, 48, 0.08);
+  border-color: rgba(255, 59, 48, 0.5);
+}
+
+.calls-delete-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.calls-phone-link {
+  color: var(--color-purple);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.calls-phone-link:hover {
+  text-decoration: underline;
+}
+
+.calls-inline-error {
+  font-size: 13px;
+  color: #e03a30;
+  margin: 0 0 14px;
+}
+
+.calls-manager-input {
+  width: 140px;
+  box-sizing: border-box;
+}
+
+.calls-create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 680px;
+}
+
+.calls-create-hint {
+  font-size: 13px;
+  color: var(--color-black);
+  opacity: 0.5;
+  margin: 0;
+}
+
+.calls-range-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  background: var(--color-white);
+  border: 1.5px solid rgba(102, 68, 170, 0.12);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.calls-range-num {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(102, 68, 170, 0.1);
+  color: var(--color-purple);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2px;
+}
+
+.calls-range-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  flex: 1;
+}
+
+.calls-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.calls-field span {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-black);
+  opacity: 0.45;
+}
+
+.calls-add-range-btn {
+  align-self: flex-start;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  border: 1.5px dashed rgba(102, 68, 170, 0.3);
+  border-radius: 10px;
+  background: none;
+  color: var(--color-purple);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.calls-add-range-btn:hover {
+  background: rgba(102, 68, 170, 0.05);
+  border-color: rgba(102, 68, 170, 0.5);
+}
+
+.calls-success {
+  font-size: 14px;
+  font-weight: 600;
+  color: #27a84a;
+  background: rgba(39, 168, 74, 0.08);
+  border: 1px solid rgba(39, 168, 74, 0.2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin: 0;
+}
+
+.calls-submit-btn {
+  align-self: flex-start;
+  padding: 12px 28px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--color-white);
+  background: linear-gradient(135deg, var(--color-purple) 0%, var(--color-blue) 100%);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+
+.calls-submit-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(102, 68, 170, 0.35);
+}
+
+.calls-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .calls-range-row {
+    flex-wrap: wrap;
+  }
+
+  .calls-range-fields {
+    flex-direction: column;
+  }
+
+  .calls-manager-input {
+    width: 100%;
+  }
+}
 .users-total {
   font-size: 13px;
   color: var(--color-black);
@@ -340,9 +601,6 @@
     width: 100%;
   }
 }
-
-/* ── Profile page ────────────────────────────────────────── */
-
 .profile-card {
   background: var(--color-white);
   border: 1px solid rgba(102, 68, 170, 0.12);
@@ -468,9 +726,6 @@
     justify-content: center;
   }
 }
-
-/* ── Dashboard ───────────────────────────────────────────── */
-
 .dashboard-container {
   max-width: 860px;
 }
@@ -688,9 +943,6 @@
     text-align: left;
   }
 }
-
-/* ── Banner picker ───────────────────────────────────────── */
-
 .banner-picker {
   display: flex;
   flex-direction: column;
