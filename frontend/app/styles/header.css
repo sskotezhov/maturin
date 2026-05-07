@@ -51,6 +51,7 @@
   font-size: 18px;
   color: var(--color-white);
   height: 100%;
+  text-decoration: none;
 }
 
 .header .bottom .center .menu-item {
