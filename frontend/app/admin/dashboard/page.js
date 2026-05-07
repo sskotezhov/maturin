@@ -31,27 +31,37 @@ export default function AdminDashboardPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   // ── Banner picker ────────────────────────────────────────
-  const [bannerSlots,   setBannerSlots]   = useState(Array(BANNER_SLOTS).fill(null));
-  const [activeSlot,    setActiveSlot]    = useState(null);
-  const [searchQuery,   setSearchQuery]   = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [bannerSaving,  setBannerSaving]  = useState(false);
-  const [bannerMsg,     setBannerMsg]     = useState(null);
-  const searchRef = useRef(null);
+  const [bannerSlots,    setBannerSlots]    = useState(Array(BANNER_SLOTS).fill(null));
+  const [bannerLoading,  setBannerLoading]  = useState(true);
+  const [activeSlot,     setActiveSlot]     = useState(null);
+  const [searchQuery,    setSearchQuery]    = useState('');
+  const [searchResults,  setSearchResults]  = useState([]);
+  const [searchLoading,  setSearchLoading]  = useState(false);
+  const [bannerSaving,   setBannerSaving]   = useState(false);
+  const [bannerMsg,      setBannerMsg]      = useState(null);
+  const searchRef    = useRef(null);
   const searchTimeout = useRef(null);
 
-  // Load current banner
+  // Load current banner independently of stats
   useEffect(() => {
+    setBannerLoading(true);
     fetch(`${API_BASE}/banner`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((products) => {
-        if (!Array.isArray(products)) return;
+      .then((data) => {
+        if (!data) return;
+        // Response: { items: [{ position, product_id, product: {...} }] }
+        const items = data.items || [];
         const slots = Array(BANNER_SLOTS).fill(null);
-        products.forEach((p, i) => { if (i < BANNER_SLOTS) slots[i] = p; });
+        items
+          .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+          .filter((item) => item.product)
+          .forEach((item, idx) => {
+            if (idx < BANNER_SLOTS) slots[idx] = item.product;
+          });
         setBannerSlots(slots);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setBannerLoading(false));
   }, []);
 
   // Search products when query changes
@@ -155,135 +165,149 @@ export default function AdminDashboardPage() {
 
           {!isAuthenticated ? (
             <p className="orders-empty">Войдите в аккаунт.</p>
-          ) : error ? (
-            <p className="orders-error">
-              Не удалось загрузить данные.{' '}
-              <button className="orders-retry-btn" onClick={fetchData}>Повторить</button>
-            </p>
-          ) : loading ? (
-            <p className="orders-loading">Загрузка...</p>
           ) : (
             <>
-              <div className="dashboard-stats">
-                <Link href="/admin/orders?status=submitted" className="dashboard-stat-card dashboard-stat-pending">
-                  <span className="dashboard-stat-value">{submitted}</span>
-                  <span className="dashboard-stat-label">На рассмотрении</span>
-                </Link>
-
-                {stale > 0 && (
-                  <Link href="/admin/orders?status=submitted" className="dashboard-stat-card dashboard-stat-stale">
-                    <span className="dashboard-stat-value">{stale}</span>
-                    <span className="dashboard-stat-label">Просрочено</span>
-                  </Link>
-                )}
-
-                <Link href="/admin/orders?status=approved" className="dashboard-stat-card dashboard-stat-approved">
-                  <span className="dashboard-stat-value">{approved}</span>
-                  <span className="dashboard-stat-label">Одобрено</span>
-                </Link>
-
-                <Link href="/admin/orders" className="dashboard-stat-card dashboard-stat-orders">
-                  <span className="dashboard-stat-value">{total}</span>
-                  <span className="dashboard-stat-label">Всего заявок</span>
-                </Link>
-              </div>
-
-              {cancelled > 0 && (
-                <p className="dashboard-cancelled-note">
-                  Отменено заявок: <strong>{cancelled}</strong>
+              {/* ── Stats ── */}
+              {error ? (
+                <p className="orders-error">
+                  Не удалось загрузить данные.{' '}
+                  <button className="orders-retry-btn" onClick={fetchData}>Повторить</button>
                 </p>
+              ) : loading ? (
+                <p className="orders-loading">Загрузка...</p>
+              ) : (
+                <>
+                  <div className="dashboard-stats">
+                    <Link href="/admin/orders?status=submitted" className="dashboard-stat-card dashboard-stat-pending">
+                      <span className="dashboard-stat-value">{submitted}</span>
+                      <span className="dashboard-stat-label">На рассмотрении</span>
+                    </Link>
+
+                    {stale > 0 && (
+                      <Link href="/admin/orders?status=submitted" className="dashboard-stat-card dashboard-stat-stale">
+                        <span className="dashboard-stat-value">{stale}</span>
+                        <span className="dashboard-stat-label">Просрочено</span>
+                      </Link>
+                    )}
+
+                    <Link href="/admin/orders?status=approved" className="dashboard-stat-card dashboard-stat-approved">
+                      <span className="dashboard-stat-value">{approved}</span>
+                      <span className="dashboard-stat-label">Одобрено</span>
+                    </Link>
+
+                    <Link href="/admin/orders" className="dashboard-stat-card dashboard-stat-orders">
+                      <span className="dashboard-stat-value">{total}</span>
+                      <span className="dashboard-stat-label">Всего заявок</span>
+                    </Link>
+                  </div>
+
+                  {cancelled > 0 && (
+                    <p className="dashboard-cancelled-note">
+                      Отменено заявок: <strong>{cancelled}</strong>
+                    </p>
+                  )}
+
+                  <div className="dashboard-quick-links">
+                    <Link href="/admin/orders" className="dashboard-quick-btn">
+                      Управление заявками →
+                    </Link>
+                    <Link href="/admin/users" className="dashboard-quick-btn dashboard-quick-btn-secondary">
+                      Пользователи →
+                    </Link>
+                  </div>
+                </>
               )}
 
-              <div className="dashboard-quick-links">
-                <Link href="/admin/orders" className="dashboard-quick-btn">
-                  Управление заявками →
-                </Link>
-                <Link href="/admin/users" className="dashboard-quick-btn dashboard-quick-btn-secondary">
-                  Пользователи →
-                </Link>
-              </div>
-
-              {/* ── Banner picker ── */}
+              {/* ── Banner picker — independent of stats loading ── */}
               <div className="banner-picker">
                 <p className="dashboard-section-title">Баннер на главной</p>
 
-                <div className="banner-slots">
-                  {bannerSlots.map((product, i) => (
-                    <div
-                      key={i}
-                      className={`banner-slot ${activeSlot === i ? 'banner-slot-active' : ''} ${!product ? 'banner-slot-empty' : ''}`}
-                      onClick={() => openSlot(i)}
-                    >
-                      <span className="banner-slot-num">{i + 1}</span>
-                      {product ? (
-                        <>
-                          <div className="banner-slot-info">
-                            <span className="banner-slot-name">{product.full_name || product.name}</span>
-                            {product.code && <span className="banner-slot-code">{product.code}</span>}
-                          </div>
-                          <button
-                            className="banner-slot-remove"
-                            onClick={(e) => { e.stopPropagation(); removeSlot(i); }}
-                            aria-label="Удалить товар из слота"
-                          >✕</button>
-                        </>
-                      ) : (
-                        <span className="banner-slot-placeholder">+ Добавить товар</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {activeSlot !== null && (
-                  <div className="banner-search">
-                    <div className="banner-search-header">
-                      <span className="banner-search-label">Слот {activeSlot + 1} — поиск товара</span>
-                      <button className="banner-search-close" onClick={closeSearch}>✕</button>
-                    </div>
-                    <input
-                      ref={searchRef}
-                      className="banner-search-input"
-                      type="search"
-                      placeholder="Название, код, артикул..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                    <div className="banner-search-results">
-                      {searchLoading && <p className="banner-search-status">Поиск...</p>}
-                      {!searchLoading && searchQuery && searchResults.length === 0 && (
-                        <p className="banner-search-status">Ничего не найдено</p>
-                      )}
-                      {searchResults.map((p) => (
-                        <button
-                          key={p.id}
-                          className="banner-search-item"
-                          onClick={() => selectProduct(p)}
+                {bannerLoading ? (
+                  <p className="orders-loading" style={{ padding: '20px 0' }}>Загрузка баннера...</p>
+                ) : (
+                  <>
+                    <div className="banner-slots">
+                      {bannerSlots.map((product, i) => (
+                        <div
+                          key={i}
+                          className={`banner-slot ${activeSlot === i ? 'banner-slot-active' : ''} ${!product ? 'banner-slot-empty' : ''}`}
+                          onClick={() => openSlot(i)}
                         >
-                          <span className="banner-search-item-name">{p.full_name || p.name}</span>
-                          <span className="banner-search-item-meta">
-                            {p.code && <span>{p.code}</span>}
-                            {p.price != null && <span>{Number(p.price).toLocaleString('ru-RU')} ₽</span>}
-                          </span>
-                        </button>
+                          <span className="banner-slot-num">{i + 1}</span>
+                          {product ? (
+                            <>
+                              <div className="banner-slot-info">
+                                <span className="banner-slot-name">{product.full_name || product.name}</span>
+                                {product.code && <span className="banner-slot-code">{product.code}</span>}
+                              </div>
+                              <button
+                                className="banner-slot-remove"
+                                onClick={(e) => { e.stopPropagation(); removeSlot(i); }}
+                                aria-label="Удалить товар из слота"
+                              >✕</button>
+                            </>
+                          ) : (
+                            <span className="banner-slot-placeholder">+ Добавить товар</span>
+                          )}
+                        </div>
                       ))}
                     </div>
-                  </div>
-                )}
 
-                <div className="banner-save-row">
-                  <button
-                    className="dashboard-quick-btn"
-                    onClick={saveBanner}
-                    disabled={bannerSaving}
-                  >
-                    {bannerSaving ? 'Сохранение...' : 'Сохранить баннер'}
-                  </button>
-                  {bannerMsg && (
-                    <span className={`banner-save-msg ${bannerMsg.error ? 'banner-save-msg-error' : 'banner-save-msg-ok'}`}>
-                      {bannerMsg.text}
-                    </span>
-                  )}
-                </div>
+                    {activeSlot !== null && (
+                      <div className="banner-search">
+                        <div className="banner-search-header">
+                          <span className="banner-search-label">Слот {activeSlot + 1} — поиск товара</span>
+                          <button className="banner-search-close" onClick={closeSearch}>✕</button>
+                        </div>
+                        <input
+                          ref={searchRef}
+                          className="banner-search-input"
+                          type="search"
+                          placeholder="Название, код, артикул..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                        <div className="banner-search-results">
+                          {searchLoading && <p className="banner-search-status">Поиск...</p>}
+                          {!searchLoading && searchQuery && searchResults.length === 0 && (
+                            <p className="banner-search-status">Ничего не найдено</p>
+                          )}
+                          {!searchLoading && !searchQuery && (
+                            <p className="banner-search-status">Введите название или код товара</p>
+                          )}
+                          {searchResults.map((p) => (
+                            <button
+                              key={p.id}
+                              className="banner-search-item"
+                              onClick={() => selectProduct(p)}
+                            >
+                              <span className="banner-search-item-name">{p.full_name || p.name}</span>
+                              <span className="banner-search-item-meta">
+                                {p.code && <span>{p.code}</span>}
+                                {p.price != null && <span>{Number(p.price).toLocaleString('ru-RU')} ₽</span>}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="banner-save-row">
+                      <button
+                        className="dashboard-quick-btn"
+                        onClick={saveBanner}
+                        disabled={bannerSaving}
+                      >
+                        {bannerSaving ? 'Сохранение...' : 'Сохранить баннер'}
+                      </button>
+                      {bannerMsg && (
+                        <span className={`banner-save-msg ${bannerMsg.error ? 'banner-save-msg-error' : 'banner-save-msg-ok'}`}>
+                          {bannerMsg.text}
+                        </span>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             </>
           )}

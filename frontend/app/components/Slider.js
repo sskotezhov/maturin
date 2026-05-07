@@ -17,7 +17,7 @@ function productToSlide(p) {
   return {
     alt:   p.full_name || p.name || '',
     image: '/images/homeslider/slide1.png',
-    row1:  p.type || '',
+    row1:  '',
     row2:  p.full_name || p.name || '',
     row3:  p.price != null ? `${Number(p.price).toLocaleString('ru-RU')} ₽` : '',
     href:  `/software_catalogue/${p.id}`,
@@ -44,8 +44,15 @@ const Slider = () => {
   useEffect(() => {
     fetch(`${API_BASE}/banner`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((products) => {
-        if (!Array.isArray(products) || products.length === 0) return;
+      .then((data) => {
+        if (!data) return;
+        // Response: { items: [{ position, product_id, product: {...} }] }
+        const items = data.items || [];
+        const products = items
+          .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+          .map((item) => item.product)
+          .filter(Boolean);
+        if (!products.length) return;
         setSlides(products.map(productToSlide));
         isTransitioningRef.current = false;
         setCurrent(1);

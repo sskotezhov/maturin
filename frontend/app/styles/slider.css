@@ -167,6 +167,7 @@
   align-items: center;
   justify-content: center;
   color: var(--color-white);
+  text-decoration: none;
 }
 
 .capsule:visited {
