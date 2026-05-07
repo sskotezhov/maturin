@@ -31,7 +31,7 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const id = params.get('client_id');
+    const id = params.get('user_id');
     if (id) { setClientId(id); setStatus(''); }
   }, []);
 
@@ -42,7 +42,7 @@ export default function AdminOrdersPage() {
 
     const params = new URLSearchParams({ page, limit });
     if (status)   params.set('status',    status);
-    if (clientId) params.set('client_id', clientId);
+    if (clientId) params.set('user_id', clientId);
 
     const res = await apiFetch(`/orders?${params}`).catch(() => null);
 

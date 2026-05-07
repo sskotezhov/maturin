@@ -36,7 +36,7 @@ export default function OrdersPage() {
 
     const params = new URLSearchParams({ page, limit });
     if (status)             params.set('status',    status);
-    if (isStaff && userId)  params.set('client_id', userId);
+    if (isStaff && userId)  params.set('user_id', userId);
 
     const [cartResult, ordersResult] = await Promise.allSettled([
       apiFetch('/cart'),

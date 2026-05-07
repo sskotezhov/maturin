@@ -103,7 +103,7 @@ function UserCard({ user, canChangeRole, onRefresh }) {
             </select>
           ) : null}
           <Link
-            href={`/admin/orders?client_id=${user.id}`}
+            href={`/admin/orders?user_id=${user.id}`}
             className="user-orders-link"
           >
             Заказы →
