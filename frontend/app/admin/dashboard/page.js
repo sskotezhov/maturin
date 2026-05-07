@@ -1,15 +1,19 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { apiFetch } from 'utils/apiClient';
 import { useAuth } from 'utils/useAuth';
 import Header from 'components/Header';
 import Footer from 'components/Footer';
 
+const API_BASE = 'https://матурин15.рф/api/v1';
+const BANNER_SLOTS = 4;
+
 export default function AdminDashboardPage() {
   const { isAuthenticated, isStaff } = useAuth();
 
+  // ── Stats ────────────────────────────────────────────────
   const [data,    setData]    = useState(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState(false);
@@ -18,20 +22,109 @@ export default function AdminDashboardPage() {
     if (!isAuthenticated || !isStaff) return;
     setLoading(true);
     setError(false);
-
     const res = await apiFetch('/staff/dashboard').catch(() => null);
-    if (!res || !res.ok) {
-      setError(true);
-      setLoading(false);
-      return;
-    }
-
+    if (!res || !res.ok) { setError(true); setLoading(false); return; }
     setData(await res.json());
     setLoading(false);
   }, [isAuthenticated, isStaff]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // ── Banner picker ────────────────────────────────────────
+  const [bannerSlots,   setBannerSlots]   = useState(Array(BANNER_SLOTS).fill(null));
+  const [activeSlot,    setActiveSlot]    = useState(null);
+  const [searchQuery,   setSearchQuery]   = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [bannerSaving,  setBannerSaving]  = useState(false);
+  const [bannerMsg,     setBannerMsg]     = useState(null);
+  const searchRef = useRef(null);
+  const searchTimeout = useRef(null);
+
+  // Load current banner
+  useEffect(() => {
+    fetch(`${API_BASE}/banner`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((products) => {
+        if (!Array.isArray(products)) return;
+        const slots = Array(BANNER_SLOTS).fill(null);
+        products.forEach((p, i) => { if (i < BANNER_SLOTS) slots[i] = p; });
+        setBannerSlots(slots);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Search products when query changes
+  useEffect(() => {
+    if (activeSlot === null) return;
+    clearTimeout(searchTimeout.current);
+    if (!searchQuery.trim()) { setSearchResults([]); return; }
+    searchTimeout.current = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const params = new URLSearchParams({ q: searchQuery, limit: 10, sort: 'name', sort_dir: 'asc', page: 1 });
+        const r = await fetch(`${API_BASE}/products?${params}`);
+        const data = await r.json();
+        setSearchResults(data.items || []);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+  }, [searchQuery, activeSlot]);
+
+  const openSlot = (i) => {
+    setActiveSlot(i);
+    setSearchQuery('');
+    setSearchResults([]);
+    setTimeout(() => searchRef.current?.focus(), 50);
+  };
+
+  const closeSearch = () => {
+    setActiveSlot(null);
+    setSearchQuery('');
+    setSearchResults([]);
+  };
+
+  const selectProduct = (product) => {
+    setBannerSlots((prev) => {
+      const next = [...prev];
+      next[activeSlot] = product;
+      return next;
+    });
+    closeSearch();
+  };
+
+  const removeSlot = (i) => {
+    if (activeSlot === i) closeSearch();
+    setBannerSlots((prev) => { const next = [...prev]; next[i] = null; return next; });
+  };
+
+  const saveBanner = async () => {
+    setBannerSaving(true);
+    setBannerMsg(null);
+    const ids = bannerSlots.filter(Boolean).map((p) => p.id);
+    try {
+      const res = await apiFetch('/admin/banner', {
+        method: 'PUT',
+        body: JSON.stringify({ product_ids: ids }),
+      });
+      if (res.ok) {
+        setBannerMsg({ text: 'Баннер сохранён', error: false });
+      } else {
+        const d = await res.json().catch(() => ({}));
+        setBannerMsg({ text: d.detail || 'Ошибка сохранения', error: true });
+      }
+    } catch {
+      setBannerMsg({ text: 'Ошибка соединения', error: true });
+    } finally {
+      setBannerSaving(false);
+      setTimeout(() => setBannerMsg(null), 4000);
+    }
+  };
+
+  // ── Access guard ─────────────────────────────────────────
   if (isAuthenticated && !isStaff) {
     return (
       <>
@@ -46,12 +139,12 @@ export default function AdminDashboardPage() {
     );
   }
 
-  const byStatus   = data?.orders_by_status   ?? {};
-  const stale      = data?.stale_submitted_count ?? 0;
-  const submitted  = byStatus.submitted  ?? 0;
-  const approved   = byStatus.approved   ?? 0;
-  const cancelled  = byStatus.cancelled  ?? 0;
-  const total      = Object.values(byStatus).reduce((s, v) => s + v, 0);
+  const byStatus  = data?.orders_by_status ?? {};
+  const stale     = data?.stale_submitted_count ?? 0;
+  const submitted = byStatus.submitted  ?? 0;
+  const approved  = byStatus.approved   ?? 0;
+  const cancelled = byStatus.cancelled  ?? 0;
+  const total     = Object.values(byStatus).reduce((s, v) => s + v, 0);
 
   return (
     <>
@@ -108,6 +201,89 @@ export default function AdminDashboardPage() {
                 <Link href="/admin/users" className="dashboard-quick-btn dashboard-quick-btn-secondary">
                   Пользователи →
                 </Link>
+              </div>
+
+              {/* ── Banner picker ── */}
+              <div className="banner-picker">
+                <p className="dashboard-section-title">Баннер на главной</p>
+
+                <div className="banner-slots">
+                  {bannerSlots.map((product, i) => (
+                    <div
+                      key={i}
+                      className={`banner-slot ${activeSlot === i ? 'banner-slot-active' : ''} ${!product ? 'banner-slot-empty' : ''}`}
+                      onClick={() => openSlot(i)}
+                    >
+                      <span className="banner-slot-num">{i + 1}</span>
+                      {product ? (
+                        <>
+                          <div className="banner-slot-info">
+                            <span className="banner-slot-name">{product.full_name || product.name}</span>
+                            {product.code && <span className="banner-slot-code">{product.code}</span>}
+                          </div>
+                          <button
+                            className="banner-slot-remove"
+                            onClick={(e) => { e.stopPropagation(); removeSlot(i); }}
+                            aria-label="Удалить товар из слота"
+                          >✕</button>
+                        </>
+                      ) : (
+                        <span className="banner-slot-placeholder">+ Добавить товар</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {activeSlot !== null && (
+                  <div className="banner-search">
+                    <div className="banner-search-header">
+                      <span className="banner-search-label">Слот {activeSlot + 1} — поиск товара</span>
+                      <button className="banner-search-close" onClick={closeSearch}>✕</button>
+                    </div>
+                    <input
+                      ref={searchRef}
+                      className="banner-search-input"
+                      type="search"
+                      placeholder="Название, код, артикул..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    <div className="banner-search-results">
+                      {searchLoading && <p className="banner-search-status">Поиск...</p>}
+                      {!searchLoading && searchQuery && searchResults.length === 0 && (
+                        <p className="banner-search-status">Ничего не найдено</p>
+                      )}
+                      {searchResults.map((p) => (
+                        <button
+                          key={p.id}
+                          className="banner-search-item"
+                          onClick={() => selectProduct(p)}
+                        >
+                          <span className="banner-search-item-name">{p.full_name || p.name}</span>
+                          <span className="banner-search-item-meta">
+                            {p.code && <span>{p.code}</span>}
+                            {p.price != null && <span>{Number(p.price).toLocaleString('ru-RU')} ₽</span>}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="banner-save-row">
+                  <button
+                    className="dashboard-quick-btn"
+                    onClick={saveBanner}
+                    disabled={bannerSaving}
+                  >
+                    {bannerSaving ? 'Сохранение...' : 'Сохранить баннер'}
+                  </button>
+                  {bannerMsg && (
+                    <span className={`banner-save-msg ${bannerMsg.error ? 'banner-save-msg-error' : 'banner-save-msg-ok'}`}>
+                      {bannerMsg.text}
+                    </span>
+                  )}
+                </div>
               </div>
             </>
           )}

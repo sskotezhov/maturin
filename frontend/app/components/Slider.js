@@ -4,51 +4,57 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
+const API_BASE = 'https://матурин15.рф/api/v1';
+
+const DEFAULT_SLIDES = [
+  { alt: 'Слайд 1', image: '/images/homeslider/slide1.png', row1: 'БУХГАЛТЕРСКОЕ', row2: 'ОБСЛУЖИВАНИЕ', row3: '', href: '/' },
+  { alt: 'Слайд 2', image: '/images/homeslider/slide1.png', row1: 'Текст2',        row2: 'Текст2',        row3: '', href: '/' },
+  { alt: 'Слайд 3', image: '/images/homeslider/slide1.png', row1: 'Текст3',        row2: 'Текст3',        row3: '', href: '/' },
+  { alt: 'Слайд 4', image: '/images/homeslider/slide1.png', row1: 'Текст4',        row2: 'Текст4',        row3: '', href: '/services/service4' },
+];
+
+function productToSlide(p) {
+  return {
+    alt:   p.full_name || p.name || '',
+    image: '/images/homeslider/slide1.png',
+    row1:  p.type || '',
+    row2:  p.full_name || p.name || '',
+    row3:  p.price != null ? `${Number(p.price).toLocaleString('ru-RU')} ₽` : '',
+    href:  `/software_catalogue/${p.id}`,
+  };
+}
+
 const Slider = () => {
-  const slides = [
-    [
-      'Слайд 1',
-      '/images/homeslider/slide1.png',
-      'БУХГАЛТЕРСКОЕ',
-      'ОБСЛУЖИВАНИЕ',
-      '/',
-    ],
-    [
-      'Слайд 2',
-      '/images/homeslider/slide1.png',
-      'Текст2',
-      'Текст2',
-      '/',
-    ],
-    [
-      'Слайд 3',
-      '/images/homeslider/slide1.png',
-      'Текст3',
-      'Текст3',
-      '/',
-    ],
-    [
-      'Слайд 4',
-      '/images/homeslider/slide1.png',
-      'Текст4',
-      'Текст4',
-      '/services/service4',
-    ],
-  ];
+  const [slides, setSlides] = useState(DEFAULT_SLIDES);
+
+  const [current,          setCurrent]          = useState(1);
+  const [isDragging,       setIsDragging]       = useState(false);
+  const [startX,           setStartX]           = useState(0);
+  const [currentTranslate, setCurrentTranslate] = useState(-100);
+  const [prevTranslate,    setPrevTranslate]    = useState(-100);
+  const [transition,       setTransition]       = useState(true);
+
+  const sliderRef           = useRef(null);
+  const containerRef        = useRef(null);
+  const autoPlayRef         = useRef(null);
+  const isTransitioningRef  = useRef(false);
+  const currentRef          = useRef(1);
+
+  // Fetch banner products from API and override default slides
+  useEffect(() => {
+    fetch(`${API_BASE}/banner`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((products) => {
+        if (!Array.isArray(products) || products.length === 0) return;
+        setSlides(products.map(productToSlide));
+        isTransitioningRef.current = false;
+        setCurrent(1);
+        setCurrentTranslate(-100);
+      })
+      .catch(() => {});
+  }, []);
 
   const extendedSlides = [slides[slides.length - 1], ...slides, slides[0]];
-
-  const [current, setCurrent] = useState(1);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [currentTranslate, setCurrentTranslate] = useState(-100);
-  const [prevTranslate, setPrevTranslate] = useState(-100);
-  const [transition, setTransition] = useState(true);
-  const sliderRef = useRef(null);
-  const containerRef = useRef(null);
-  const autoPlayRef = useRef(null);
-  const isTransitioningRef = useRef(false);
-  const currentRef = useRef(1);
 
   useEffect(() => {
     currentRef.current = current;
@@ -86,17 +92,13 @@ const Slider = () => {
 
   const snapToNearestSlide = useCallback(() => {
     const nearestIndex = Math.round(-currentTranslate / 100);
-    const clampedIndex = Math.max(
-      0,
-      Math.min(nearestIndex, extendedSlides.length - 1)
-    );
+    const clampedIndex = Math.max(0, Math.min(nearestIndex, extendedSlides.length - 1));
     setCurrent(clampedIndex);
   }, [currentTranslate, extendedSlides.length]);
 
   const handleTouchStart = (e) => {
     stopAutoPlay();
-    const touch = e.touches[0];
-    setStartX(touch.clientX);
+    setStartX(e.touches[0].clientX);
     setIsDragging(true);
     setTransition(false);
     setPrevTranslate(currentTranslate);
@@ -104,26 +106,16 @@ const Slider = () => {
 
   const handleTouchMove = (e) => {
     if (!isDragging) return;
-    const touch = e.touches[0];
-    const diff = touch.clientX - startX;
-    const translateValue =
-      prevTranslate + (diff / sliderRef.current.offsetWidth) * 100;
-
-    const minTranslate = -(extendedSlides.length - 1) * 100;
-    const maxTranslate = 0;
-
-    setCurrentTranslate(
-      Math.max(Math.min(translateValue, maxTranslate), minTranslate)
-    );
+    const diff = e.touches[0].clientX - startX;
+    const val  = prevTranslate + (diff / sliderRef.current.offsetWidth) * 100;
+    setCurrentTranslate(Math.max(Math.min(val, 0), -(extendedSlides.length - 1) * 100));
   };
 
   const handleTouchEnd = () => {
     if (!isDragging) return;
     setIsDragging(false);
     setTransition(true);
-
     snapToNearestSlide();
-
     startAutoPlay();
   };
 
@@ -140,38 +132,25 @@ const Slider = () => {
     if (!isDragging) return;
     e.preventDefault();
     const diff = e.clientX - startX;
-    const translateValue =
-      prevTranslate + (diff / sliderRef.current.offsetWidth) * 100;
-
-    const minTranslate = -(extendedSlides.length - 1) * 100;
-    const maxTranslate = 0;
-
-    setCurrentTranslate(
-      Math.max(Math.min(translateValue, maxTranslate), minTranslate)
-    );
+    const val  = prevTranslate + (diff / sliderRef.current.offsetWidth) * 100;
+    setCurrentTranslate(Math.max(Math.min(val, 0), -(extendedSlides.length - 1) * 100));
   };
 
   const handleMouseUp = () => {
     if (!isDragging) return;
     setIsDragging(false);
     setTransition(true);
-
     snapToNearestSlide();
-
     startAutoPlay();
   };
 
   const handleMouseLeave = () => {
-    if (isDragging) {
-      handleMouseUp();
-    }
+    if (isDragging) handleMouseUp();
   };
 
   useEffect(() => {
     if (!isDragging && transition) {
-      const newTranslate = -current * 100;
-      setCurrentTranslate(newTranslate);
-
+      setCurrentTranslate(-current * 100);
       if (current === 0 || current === extendedSlides.length - 1) {
         const timeout = setTimeout(() => {
           setTransition(false);
@@ -214,9 +193,9 @@ const Slider = () => {
         className="slider-container"
         ref={containerRef}
         style={{
-          transform: `translateX(${currentTranslate}%)`,
+          transform:  `translateX(${currentTranslate}%)`,
           transition: transition ? 'transform 0.3s ease-out' : 'none',
-          cursor: isDragging ? 'grabbing' : 'grab',
+          cursor:     isDragging ? 'grabbing' : 'grab',
         }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -227,10 +206,10 @@ const Slider = () => {
         onMouseLeave={handleMouseLeave}
       >
         {extendedSlides.map((slide, index) => (
-          <div key={`${index}-${slide[0]}`} className="slide">
+          <div key={`${index}-${slide.alt}`} className="slide">
             <Image
-              src={slide[1]}
-              alt={slide[0]}
+              src={slide.image}
+              alt={slide.alt}
               sizes="100vw"
               fill={true}
               draggable={false}
@@ -245,9 +224,10 @@ const Slider = () => {
                 <span className="border-right-top"></span>
                 <span className="border-right-bottom"></span>
                 <div className="slide-text-content">
-                  <div className="first-row">{slide[2]}</div>
-                  <div className="second-row">{slide[3]}</div>
-                  <Link href={slide[4]} className="capsule" prefetch={false}>
+                  <div className="first-row">{slide.row1}</div>
+                  <div className="second-row">{slide.row2}</div>
+                  {slide.row3 && <div className="third-row">{slide.row3}</div>}
+                  <Link href={slide.href} className="capsule" prefetch={false}>
                     Подробнее
                   </Link>
                 </div>
