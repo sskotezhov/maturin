@@ -13,9 +13,11 @@ import (
 
 	"github.com/sskotezhov/maturin/config"
 	"github.com/sskotezhov/maturin/internal/auth"
+	"github.com/sskotezhov/maturin/internal/banner"
 	"github.com/sskotezhov/maturin/internal/inquiry"
 	"github.com/sskotezhov/maturin/internal/order"
 	"github.com/sskotezhov/maturin/internal/product"
+	"github.com/sskotezhov/maturin/internal/slot"
 	"github.com/sskotezhov/maturin/internal/staff"
 	"github.com/sskotezhov/maturin/internal/user"
 	"github.com/sskotezhov/maturin/pkg/email"
@@ -84,6 +86,11 @@ func New(cfg *config.Config, db *gorm.DB, rdb *redis.Client) (*App, error) {
 	inquirySvc := inquiry.NewService(inquiryRepo, userRepo, emailSender)
 	inquiryHandler := inquiry.NewHandler(inquirySvc)
 
+	// banner
+	bannerRepo := banner.NewRepository(db)
+	bannerSvc := banner.NewService(bannerRepo)
+	bannerHandler := banner.NewHandler(bannerSvc, productSvc)
+
 	// swagger
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
@@ -99,6 +106,7 @@ func New(cfg *config.Config, db *gorm.DB, rdb *redis.Client) (*App, error) {
 	productHandler.Register(api.Group("/products"))
 	productHandler.RegisterCategories(api.Group("/categories"))
 	inquiryHandler.Register(api.Group("/inquiries"))
+	bannerHandler.Register(api.Group("/banner"))
 
 	authed := api.Group("", mw.JWTAuth(jwtCfg.Secret))
 	user.NewHandler(userSvc).Register(authed.Group("/user"))
@@ -109,6 +117,17 @@ func New(cfg *config.Config, db *gorm.DB, rdb *redis.Client) (*App, error) {
 	staffSvc := staff.NewService(userRepo, cartRepo, cartSvc, productSvc, inquiryRepo)
 	staffHandler := staff.NewHandler(staffSvc)
 	staffHandler.Register(authed.Group("/staff", mw.RequireRoles(roles.RoleManager, roles.RoleAdmin)))
+
+	// slots
+	slotRepo := slot.NewRepository(db)
+	slotSvc := slot.NewService(slotRepo)
+	slotHandler := slot.NewHandler(slotSvc)
+	slotHandler.RegisterPublic(api.Group("/slots"))
+	slotHandler.RegisterStaff(authed.Group("/staff/slots", mw.RequireRoles(roles.RoleManager, roles.RoleAdmin)))
+
+	// admin-only
+	adminOnly := authed.Group("", mw.RequireRoles(roles.RoleAdmin))
+	bannerHandler.RegisterAdmin(adminOnly.Group("/admin/banner"))
 
 	// прогрев кеша в фоне
 	go func() {
@@ -134,5 +153,11 @@ func migrate(db *gorm.DB) error {
 	if err := inquiry.Migrate(db); err != nil {
 		return err
 	}
-	return order.Migrate(db)
+	if err := order.Migrate(db); err != nil {
+		return err
+	}
+	if err := banner.Migrate(db); err != nil {
+		return err
+	}
+	return slot.Migrate(db)
 }
