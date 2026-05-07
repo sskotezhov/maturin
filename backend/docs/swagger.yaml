@@ -266,6 +266,8 @@ definitions:
     type: object
   slot.bookRequest:
     properties:
+      comment:
+        type: string
       name:
         type: string
       phone:
