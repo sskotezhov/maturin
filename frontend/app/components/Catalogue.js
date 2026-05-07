@@ -55,7 +55,6 @@ export default function Catalogue({ initialParams, initialProducts = [], initial
   const abortRef      = useRef(null);
   const isFirstRender = useRef(true);
 
-  // Sync URL → state when navigating via Links (e.g. pagination)
   useEffect(() => {
     const params = Object.fromEntries(searchParams.entries());
     const newFilters = parseParams(params);

@@ -13,7 +13,6 @@ const BANNER_SLOTS = 4;
 export default function AdminDashboardPage() {
   const { isAuthenticated, isStaff } = useAuth();
 
-  // ── Stats ────────────────────────────────────────────────
   const [data,    setData]    = useState(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState(false);
@@ -30,7 +29,6 @@ export default function AdminDashboardPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // ── Banner picker ────────────────────────────────────────
   const [bannerSlots,    setBannerSlots]    = useState(Array(BANNER_SLOTS).fill(null));
   const [bannerLoading,  setBannerLoading]  = useState(true);
   const [activeSlot,     setActiveSlot]     = useState(null);
@@ -42,14 +40,12 @@ export default function AdminDashboardPage() {
   const searchRef    = useRef(null);
   const searchTimeout = useRef(null);
 
-  // Load current banner independently of stats
   useEffect(() => {
     setBannerLoading(true);
     fetch(`${API_BASE}/banner`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!data) return;
-        // Response: { items: [{ position, product_id, product: {...} }] }
         const items = data.items || [];
         const slots = Array(BANNER_SLOTS).fill(null);
         items
@@ -64,7 +60,6 @@ export default function AdminDashboardPage() {
       .finally(() => setBannerLoading(false));
   }, []);
 
-  // Search products when query changes
   useEffect(() => {
     if (activeSlot === null) return;
     clearTimeout(searchTimeout.current);
@@ -134,7 +129,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // ── Access guard ─────────────────────────────────────────
   if (isAuthenticated && !isStaff) {
     return (
       <>
@@ -167,7 +161,6 @@ export default function AdminDashboardPage() {
             <p className="orders-empty">Войдите в аккаунт.</p>
           ) : (
             <>
-              {/* ── Stats ── */}
               {error ? (
                 <p className="orders-error">
                   Не удалось загрузить данные.{' '}
@@ -218,7 +211,6 @@ export default function AdminDashboardPage() {
                 </>
               )}
 
-              {/* ── Banner picker — independent of stats loading ── */}
               <div className="banner-picker">
                 <p className="dashboard-section-title">Баннер на главной</p>
 

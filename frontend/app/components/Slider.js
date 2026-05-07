@@ -40,13 +40,11 @@ const Slider = () => {
   const isTransitioningRef  = useRef(false);
   const currentRef          = useRef(1);
 
-  // Fetch banner products from API and override default slides
   useEffect(() => {
     fetch(`${API_BASE}/banner`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!data) return;
-        // Response: { items: [{ position, product_id, product: {...} }] }
         const items = data.items || [];
         const products = items
           .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
