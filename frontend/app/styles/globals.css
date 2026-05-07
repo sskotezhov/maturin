@@ -14,9 +14,3 @@ body {
   margin: 0;
   padding: 0;
 }
-
-:link,
-:visited {
-  color: var(--color-white);
-  text-decoration: none;
-}

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import AuthModal from 'components/AuthModal';
 import ProductCard from 'components/ProductCard';
 import { apiFetch } from 'utils/apiClient';
@@ -33,8 +34,9 @@ function parseParams(p = {}) {
 }
 
 export default function Catalogue({ initialParams, initialProducts = [], initialTotal = 0, initialCategories = [] }) {
-  const router   = useRouter();
-  const pathname = usePathname();
+  const router      = useRouter();
+  const pathname    = usePathname();
+  const searchParams = useSearchParams();
   const { isAuthenticated } = useAuth();
 
   const [filters,    setFiltersState] = useState(() => parseParams(initialParams));
@@ -52,6 +54,17 @@ export default function Catalogue({ initialParams, initialProducts = [], initial
   const searchTimeout = useRef(null);
   const abortRef      = useRef(null);
   const isFirstRender = useRef(true);
+
+  // Sync URL → state when navigating via Links (e.g. pagination)
+  useEffect(() => {
+    const params = Object.fromEntries(searchParams.entries());
+    const newFilters = parseParams(params);
+    setFiltersState((prev) => {
+      if (JSON.stringify(prev) === JSON.stringify(newFilters)) return prev;
+      return newFilters;
+    });
+    setSearchInput(params.q || '');
+  }, [searchParams]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -180,6 +193,22 @@ export default function Catalogue({ initialParams, initialProducts = [], initial
   };
 
   const totalPages = Math.ceil(total / LIMIT);
+
+  function buildPageHref(page) {
+    const params = new URLSearchParams();
+    if (filters.q)                  params.set('q',         filters.q);
+    if (filters.category)           params.set('category',  filters.category);
+    if (filters.type)               params.set('type',      filters.type);
+    if (filters.in_stock)           params.set('in_stock',  '1');
+    if (filters.has_price)          params.set('has_price', '1');
+    if (filters.min_price)          params.set('min_price', filters.min_price);
+    if (filters.max_price)          params.set('max_price', filters.max_price);
+    if (filters.sort !== 'name')    params.set('sort',      filters.sort);
+    if (filters.sort_dir !== 'asc') params.set('sort_dir',  filters.sort_dir);
+    if (page > 1)                   params.set('page',      page);
+    const qs = params.toString();
+    return `${pathname}${qs ? `?${qs}` : ''}`;
+  }
 
   return (
     <div className="catalogue-wrapper">
@@ -334,12 +363,16 @@ export default function Catalogue({ initialParams, initialProducts = [], initial
 
       {totalPages > 1 && (
         <nav className="catalogue-pagination" aria-label="Пагинация каталога">
-          <button
-            className="catalogue-page-btn"
-            disabled={filters.page <= 1}
-            onClick={() => setFilter('page', filters.page - 1)}
-            aria-label="Предыдущая страница"
-          >←</button>
+          {filters.page <= 1 ? (
+            <button className="catalogue-page-btn" disabled aria-label="Предыдущая страница">←</button>
+          ) : (
+            <Link
+              href={buildPageHref(filters.page - 1)}
+              className="catalogue-page-btn"
+              scroll={false}
+              aria-label="Предыдущая страница"
+            >←</Link>
+          )}
 
           {Array.from({ length: totalPages }, (_, i) => i + 1)
             .filter((p) => p === 1 || p === totalPages || Math.abs(p - filters.page) <= 2)
@@ -352,22 +385,27 @@ export default function Catalogue({ initialParams, initialProducts = [], initial
               p === '...' ? (
                 <span key={`ellipsis-${i}`} className="catalogue-page-ellipsis" aria-hidden="true">…</span>
               ) : (
-                <button
+                <Link
                   key={p}
+                  href={buildPageHref(p)}
                   className={`catalogue-page-btn ${p === filters.page ? 'active' : ''}`}
-                  onClick={() => setFilter('page', p)}
+                  scroll={false}
                   aria-label={`Страница ${p}`}
                   aria-current={p === filters.page ? 'page' : undefined}
-                >{p}</button>
+                >{p}</Link>
               )
             )}
 
-          <button
-            className="catalogue-page-btn"
-            disabled={filters.page >= totalPages}
-            onClick={() => setFilter('page', filters.page + 1)}
-            aria-label="Следующая страница"
-          >→</button>
+          {filters.page >= totalPages ? (
+            <button className="catalogue-page-btn" disabled aria-label="Следующая страница">→</button>
+          ) : (
+            <Link
+              href={buildPageHref(filters.page + 1)}
+              className="catalogue-page-btn"
+              scroll={false}
+              aria-label="Следующая страница"
+            >→</Link>
+          )}
         </nav>
       )}
 
