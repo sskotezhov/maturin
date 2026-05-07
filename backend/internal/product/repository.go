@@ -16,6 +16,7 @@ import (
 const (
 	cacheKeyAll        = "catalog:all"
 	cacheKeyCategories = "catalog:categories"
+	cacheKeySyncedAt   = "catalog:synced_at"
 )
 
 type Repository interface {
@@ -23,6 +24,7 @@ type Repository interface {
 	GetByID(ctx context.Context, id string) (*Product, error)
 	GetCategories(ctx context.Context) ([]Category, error)
 	RefreshCache(ctx context.Context) (productsCount, categoriesCount int, err error)
+	GetCacheSyncedAt(ctx context.Context) (*time.Time, error)
 }
 
 type oneCRepository struct {
@@ -116,7 +118,17 @@ func (r *oneCRepository) RefreshCache(ctx context.Context) (int, int, error) {
 	if err != nil {
 		return len(products), 0, err
 	}
+	r.rdb.Set(ctx, cacheKeySyncedAt, time.Now().Unix(), 0)
 	return len(products), len(cats), nil
+}
+
+func (r *oneCRepository) GetCacheSyncedAt(ctx context.Context) (*time.Time, error) {
+	ts, err := r.rdb.Get(ctx, cacheKeySyncedAt).Int64()
+	if err != nil {
+		return nil, err
+	}
+	t := time.Unix(ts, 0)
+	return &t, nil
 }
 
 func (r *oneCRepository) fetchAndJoin(ctx context.Context) ([]Product, error) {

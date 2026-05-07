@@ -25,6 +25,7 @@ type EmailSender interface {
 	SendOrderSubmitted(to string, orderID uint) error
 	SendOrderApproved(to string, orderID uint, totalPrice float64) error
 	SendNewMessage(to string, orderID uint) error
+	SendOrderModified(to string, orderID uint) error
 }
 
 type AddItemInput struct {
@@ -55,6 +56,10 @@ type Service interface {
 
 	GetMessages(ctx context.Context, userID uint, role string, orderID uint) ([]Message, error)
 	SendMessage(ctx context.Context, userID uint, role string, orderID uint, text string) (*Message, error)
+
+	StaffAddItem(ctx context.Context, actorID, orderID uint, input AddItemInput) (*Order, error)
+	StaffUpdateItem(ctx context.Context, actorID, orderID uint, itemID uint, input UpdateItemInput) (*Order, error)
+	StaffDeleteItem(ctx context.Context, actorID, orderID uint, itemID uint) error
 }
 
 type service struct {
@@ -236,6 +241,7 @@ func (s *service) GetOrders(ctx context.Context, userID uint, role string, f Fil
 		return nil, err
 	}
 	s.enrichResponseStatuses(ctx, orders)
+	s.enrichUsers(ctx, orders)
 	return orders, nil
 }
 
@@ -254,6 +260,7 @@ func (s *service) GetOrder(ctx context.Context, userID uint, role string, orderI
 		return nil, ErrNotFound
 	}
 	s.enrichResponseStatus(ctx, order)
+	s.enrichUser(ctx, order)
 	return order, nil
 }
 
@@ -324,6 +331,51 @@ func (s *service) ApproveOrder(ctx context.Context, userID uint, role string, or
 func (s *service) enrichResponseStatuses(ctx context.Context, orders []*Order) {
 	for _, order := range orders {
 		s.enrichResponseStatus(ctx, order)
+	}
+}
+
+func (s *service) enrichUsers(ctx context.Context, orders []*Order) {
+	seen := map[uint]bool{}
+	ids := make([]uint, 0, len(orders))
+	for _, o := range orders {
+		if !seen[o.UserID] {
+			ids = append(ids, o.UserID)
+			seen[o.UserID] = true
+		}
+	}
+	users, err := s.userRepo.FindByIDs(ctx, ids)
+	if err != nil {
+		slog.Error("enrich users failed", "err", err)
+		return
+	}
+	byID := make(map[uint]*user.User, len(users))
+	for _, u := range users {
+		byID[u.ID] = u
+	}
+	for _, o := range orders {
+		if u, ok := byID[o.UserID]; ok {
+			o.User = toUserInfo(u)
+		}
+	}
+}
+
+func (s *service) enrichUser(ctx context.Context, o *Order) {
+	u, err := s.userRepo.FindByID(ctx, o.UserID)
+	if err != nil {
+		slog.Error("enrich user failed", "order_id", o.ID, "user_id", o.UserID, "err", err)
+		return
+	}
+	o.User = toUserInfo(u)
+}
+
+func toUserInfo(u *user.User) *UserInfo {
+	return &UserInfo{
+		ID:          u.ID,
+		Email:       u.Email,
+		LastName:    u.LastName,
+		FirstName:   u.FirstName,
+		Phone:       u.Phone,
+		CompanyName: u.CompanyName,
 	}
 }
 
@@ -415,6 +467,127 @@ func (s *service) SendMessage(ctx context.Context, userID uint, role string, ord
 	}
 
 	return msg, nil
+}
+
+func (s *service) StaffAddItem(ctx context.Context, actorID, orderID uint, input AddItemInput) (*Order, error) {
+	ord, err := s.repo.FindByID(ctx, orderID)
+	if err != nil {
+		return nil, ErrNotFound
+	}
+	if ord.Status != StatusDraft && ord.Status != StatusSubmitted {
+		slog.Warn("staff add item rejected: wrong status", "order_id", orderID, "status", ord.Status)
+		return nil, ErrOrderNotEditable
+	}
+	if input.PriceSnapshot == nil && input.Comment == "" {
+		return nil, ErrCommentRequired
+	}
+
+	item := &Item{
+		OrderID:       orderID,
+		ProductID:     input.ProductID,
+		ProductName:   input.ProductName,
+		ProductCode:   input.ProductCode,
+		Quantity:      input.Quantity,
+		PriceSnapshot: input.PriceSnapshot,
+		Comment:       input.Comment,
+	}
+	if err := s.repo.AddItem(ctx, item); err != nil {
+		slog.Error("staff add item failed", "order_id", orderID, "product_id", input.ProductID, "err", err)
+		return nil, err
+	}
+	slog.Info("staff added item to order", "order_id", orderID, "product_id", input.ProductID, "actor_id", actorID)
+
+	if ord.UserID != actorID {
+		s.notifyOrderModified(ctx, ord.UserID, orderID)
+	}
+	return s.repo.FindByID(ctx, orderID)
+}
+
+func (s *service) StaffUpdateItem(ctx context.Context, actorID, orderID uint, itemID uint, input UpdateItemInput) (*Order, error) {
+	item, err := s.repo.FindItem(ctx, itemID)
+	if err != nil {
+		return nil, ErrNotFound
+	}
+	if item.OrderID != orderID {
+		return nil, ErrNotFound
+	}
+
+	ord, err := s.repo.FindByID(ctx, orderID)
+	if err != nil {
+		return nil, ErrNotFound
+	}
+	if ord.Status != StatusDraft && ord.Status != StatusSubmitted {
+		slog.Warn("staff update item rejected: wrong status", "order_id", orderID, "status", ord.Status)
+		return nil, ErrOrderNotEditable
+	}
+
+	item.Quantity = input.Quantity
+	item.Comment = input.Comment
+	if err := s.repo.UpdateItem(ctx, item); err != nil {
+		slog.Error("staff update item failed", "item_id", itemID, "err", err)
+		return nil, err
+	}
+	slog.Info("staff updated item", "item_id", itemID, "order_id", orderID, "actor_id", actorID)
+
+	if ord.UserID != actorID {
+		s.notifyOrderModified(ctx, ord.UserID, orderID)
+	}
+	return s.repo.FindByID(ctx, orderID)
+}
+
+func (s *service) StaffDeleteItem(ctx context.Context, actorID, orderID uint, itemID uint) error {
+	item, err := s.repo.FindItem(ctx, itemID)
+	if err != nil {
+		return ErrNotFound
+	}
+	if item.OrderID != orderID {
+		return ErrNotFound
+	}
+
+	ord, err := s.repo.FindByID(ctx, orderID)
+	if err != nil {
+		return ErrNotFound
+	}
+	if ord.Status != StatusDraft && ord.Status != StatusSubmitted {
+		slog.Warn("staff delete item rejected: wrong status", "order_id", orderID, "status", ord.Status)
+		return ErrOrderNotEditable
+	}
+
+	if err := s.repo.DeleteItem(ctx, itemID); err != nil {
+		slog.Error("staff delete item failed", "item_id", itemID, "err", err)
+		return err
+	}
+	slog.Info("staff deleted item", "item_id", itemID, "order_id", orderID, "actor_id", actorID)
+
+	if ord.UserID != actorID {
+		s.notifyOrderModified(ctx, ord.UserID, orderID)
+	}
+	return nil
+}
+
+func (s *service) notifyOrderModified(ctx context.Context, clientUserID, orderID uint) {
+	client, err := s.userRepo.FindByID(ctx, clientUserID)
+	if err != nil {
+		slog.Error("notify order modified: fetch client failed", "client_id", clientUserID, "err", err)
+		return
+	}
+	key := fmt.Sprintf("notify:edit:%d:%d", orderID, clientUserID)
+	_, err = s.rdb.SetArgs(ctx, key, 1, redis.SetArgs{
+		Mode: "NX",
+		TTL:  3 * 24 * time.Hour,
+	}).Result()
+	if errors.Is(err, redis.Nil) {
+		slog.Debug("order modified notification throttled", "order_id", orderID, "client_id", clientUserID)
+		return
+	}
+	if err != nil {
+		slog.Error("order modified throttle check failed", "err", err)
+		return
+	}
+	if err := s.emailSender.SendOrderModified(client.Email, orderID); err != nil {
+		slog.Error("order modified notification send failed", "order_id", orderID, "client_id", clientUserID, "err", err)
+		s.rdb.Del(ctx, key)
+	}
 }
 
 func (s *service) tryNotify(ctx context.Context, orderID, recipientID uint, send func() error) {

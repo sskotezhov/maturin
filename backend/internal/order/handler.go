@@ -68,9 +68,18 @@ type orderItemResponse struct {
 	Comment       string   `json:"comment"`
 }
 
+type userInfoResponse struct {
+	ID          uint   `json:"id"`
+	Email       string `json:"email"`
+	LastName    string `json:"last_name"`
+	FirstName   string `json:"first_name"`
+	Phone       string `json:"phone"`
+	CompanyName string `json:"company_name"`
+}
+
 type orderResponse struct {
 	ID             uint                `json:"id"`
-	UserID         uint                `json:"user_id"`
+	User           *userInfoResponse   `json:"user"`
 	Status         string              `json:"status"`
 	ResponseStatus string              `json:"response_status"`
 	TotalPrice     *float64            `json:"total_price"`
@@ -100,9 +109,20 @@ func toOrderResponse(o *Order) orderResponse {
 			Comment:       item.Comment,
 		}
 	}
+	var u *userInfoResponse
+	if o.User != nil {
+		u = &userInfoResponse{
+			ID:          o.User.ID,
+			Email:       o.User.Email,
+			LastName:    o.User.LastName,
+			FirstName:   o.User.FirstName,
+			Phone:       o.User.Phone,
+			CompanyName: o.User.CompanyName,
+		}
+	}
 	return orderResponse{
 		ID:             o.ID,
-		UserID:         o.UserID,
+		User:           u,
 		Status:         string(o.Status),
 		ResponseStatus: responseStatus(o),
 		TotalPrice:     o.TotalPrice,

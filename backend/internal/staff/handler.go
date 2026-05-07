@@ -29,6 +29,9 @@ func (h *Handler) Register(g *echo.Group) {
 	g.GET("/inquiries/:id", h.getInquiry)
 	g.PATCH("/inquiries/:id/status", h.changeInquiryStatus)
 	g.GET("/dashboard", h.getDashboard)
+	g.POST("/orders/:id/items", h.staffAddItem)
+	g.PATCH("/orders/:id/items/:itemID", h.staffUpdateItem)
+	g.DELETE("/orders/:id/items/:itemID", h.staffDeleteItem)
 
 	adminOnly := g.Group("", mw.RequireRoles(roles.RoleAdmin))
 	adminOnly.PATCH("/clients/:id/role", h.changeRole)
@@ -69,9 +72,18 @@ type orderItemView struct {
 	Comment       string   `json:"comment"`
 }
 
+type userInfoView struct {
+	ID          uint   `json:"id"`
+	Email       string `json:"email"`
+	LastName    string `json:"last_name"`
+	FirstName   string `json:"first_name"`
+	Phone       string `json:"phone"`
+	CompanyName string `json:"company_name"`
+}
+
 type orderView struct {
 	ID             uint            `json:"id"`
-	UserID         uint            `json:"user_id"`
+	User           *userInfoView   `json:"user"`
 	Status         string          `json:"status"`
 	ResponseStatus string          `json:"response_status"`
 	TotalPrice     *float64        `json:"total_price"`
@@ -89,6 +101,7 @@ type clientDetailsResponse struct {
 type dashboardResponse struct {
 	OrdersByStatus      map[string]int `json:"orders_by_status"`
 	StaleSubmittedCount int            `json:"stale_submitted_count"`
+	CatalogSyncedAt     *string        `json:"catalog_synced_at"`
 }
 
 type inquiryView struct {
@@ -157,9 +170,20 @@ func toOrderView(o *order.Order) orderView {
 			Comment:       item.Comment,
 		}
 	}
+	var u *userInfoView
+	if o.User != nil {
+		u = &userInfoView{
+			ID:          o.User.ID,
+			Email:       o.User.Email,
+			LastName:    o.User.LastName,
+			FirstName:   o.User.FirstName,
+			Phone:       o.User.Phone,
+			CompanyName: o.User.CompanyName,
+		}
+	}
 	return orderView{
 		ID:             o.ID,
-		UserID:         o.UserID,
+		User:           u,
 		Status:         string(o.Status),
 		ResponseStatus: orderResponseStatus(o),
 		TotalPrice:     o.TotalPrice,
@@ -389,9 +413,15 @@ func (h *Handler) getDashboard(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "internal error"})
 	}
+	var syncedAt *string
+	if d.CatalogSyncedAt != nil {
+		s := d.CatalogSyncedAt.Format("2006-01-02T15:04:05Z07:00")
+		syncedAt = &s
+	}
 	return c.JSON(http.StatusOK, dashboardResponse{
 		OrdersByStatus:      d.OrdersByStatus,
 		StaleSubmittedCount: d.StaleSubmittedCount,
+		CatalogSyncedAt:     syncedAt,
 	})
 }
 
@@ -453,6 +483,156 @@ func (h *Handler) refreshCache(c echo.Context) error {
 		ProductsCount:   stats.ProductsCount,
 		CategoriesCount: stats.CategoriesCount,
 	})
+}
+
+type staffAddItemRequest struct {
+	ProductID     string   `json:"product_id"`
+	ProductName   string   `json:"product_name"`
+	ProductCode   string   `json:"product_code"`
+	Quantity      int      `json:"quantity"`
+	PriceSnapshot *float64 `json:"price_snapshot"`
+	Comment       string   `json:"comment"`
+}
+
+type staffUpdateItemRequest struct {
+	Quantity int    `json:"quantity"`
+	Comment  string `json:"comment"`
+}
+
+// @Summary     Add item to client's order (manager/admin)
+// @Tags        staff
+// @Accept      json
+// @Produce     json
+// @Param       id   path int                  true "Order ID"
+// @Param       body body staffAddItemRequest  true "Item to add"
+// @Success     200 {object} orderView
+// @Failure     400 {object} map[string]string
+// @Failure     404 {object} map[string]string
+// @Failure     409 {object} map[string]string
+// @Security    BearerAuth
+// @Router      /staff/orders/{id}/items [post]
+func (h *Handler) staffAddItem(c echo.Context) error {
+	actorID := c.Get(mw.ContextUserID).(uint)
+	orderID, err := parseID(c, "id")
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "invalid order id"})
+	}
+
+	var req staffAddItemRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "invalid request"})
+	}
+	if req.ProductID == "" || req.ProductName == "" || req.Quantity <= 0 {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "product_id, product_name and quantity are required"})
+	}
+
+	ord, err := h.svc.StaffAddItem(c.Request().Context(), actorID, orderID, order.AddItemInput{
+		ProductID:     req.ProductID,
+		ProductName:   req.ProductName,
+		ProductCode:   req.ProductCode,
+		Quantity:      req.Quantity,
+		PriceSnapshot: req.PriceSnapshot,
+		Comment:       req.Comment,
+	})
+	if err != nil {
+		switch {
+		case errors.Is(err, order.ErrNotFound):
+			return c.JSON(http.StatusNotFound, echo.Map{"error": "order not found"})
+		case errors.Is(err, order.ErrOrderNotEditable):
+			return c.JSON(http.StatusConflict, echo.Map{"error": "order cannot be edited in current status"})
+		case errors.Is(err, order.ErrCommentRequired):
+			return c.JSON(http.StatusBadRequest, echo.Map{"error": "comment required for items without price"})
+		default:
+			return c.JSON(http.StatusInternalServerError, echo.Map{"error": "internal error"})
+		}
+	}
+
+	return c.JSON(http.StatusOK, toOrderView(ord))
+}
+
+// @Summary     Update item in client's order (manager/admin)
+// @Tags        staff
+// @Accept      json
+// @Produce     json
+// @Param       id     path int                    true "Order ID"
+// @Param       itemID path int                    true "Item ID"
+// @Param       body   body staffUpdateItemRequest true "Updated item"
+// @Success     200 {object} orderView
+// @Failure     400 {object} map[string]string
+// @Failure     404 {object} map[string]string
+// @Failure     409 {object} map[string]string
+// @Security    BearerAuth
+// @Router      /staff/orders/{id}/items/{itemID} [patch]
+func (h *Handler) staffUpdateItem(c echo.Context) error {
+	actorID := c.Get(mw.ContextUserID).(uint)
+	orderID, err := parseID(c, "id")
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "invalid order id"})
+	}
+	itemID, err := parseID(c, "itemID")
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "invalid item id"})
+	}
+
+	var req staffUpdateItemRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "invalid request"})
+	}
+	if req.Quantity <= 0 {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "quantity must be positive"})
+	}
+
+	ord, err := h.svc.StaffUpdateItem(c.Request().Context(), actorID, orderID, itemID, order.UpdateItemInput{
+		Quantity: req.Quantity,
+		Comment:  req.Comment,
+	})
+	if err != nil {
+		switch {
+		case errors.Is(err, order.ErrNotFound):
+			return c.JSON(http.StatusNotFound, echo.Map{"error": "not found"})
+		case errors.Is(err, order.ErrOrderNotEditable):
+			return c.JSON(http.StatusConflict, echo.Map{"error": "order cannot be edited in current status"})
+		default:
+			return c.JSON(http.StatusInternalServerError, echo.Map{"error": "internal error"})
+		}
+	}
+
+	return c.JSON(http.StatusOK, toOrderView(ord))
+}
+
+// @Summary     Delete item from client's order (manager/admin)
+// @Tags        staff
+// @Param       id     path int true "Order ID"
+// @Param       itemID path int true "Item ID"
+// @Success     204
+// @Failure     400 {object} map[string]string
+// @Failure     404 {object} map[string]string
+// @Failure     409 {object} map[string]string
+// @Security    BearerAuth
+// @Router      /staff/orders/{id}/items/{itemID} [delete]
+func (h *Handler) staffDeleteItem(c echo.Context) error {
+	actorID := c.Get(mw.ContextUserID).(uint)
+	orderID, err := parseID(c, "id")
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "invalid order id"})
+	}
+	itemID, err := parseID(c, "itemID")
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "invalid item id"})
+	}
+
+	if err := h.svc.StaffDeleteItem(c.Request().Context(), actorID, orderID, itemID); err != nil {
+		switch {
+		case errors.Is(err, order.ErrNotFound):
+			return c.JSON(http.StatusNotFound, echo.Map{"error": "not found"})
+		case errors.Is(err, order.ErrOrderNotEditable):
+			return c.JSON(http.StatusConflict, echo.Map{"error": "order cannot be edited in current status"})
+		default:
+			return c.JSON(http.StatusInternalServerError, echo.Map{"error": "internal error"})
+		}
+	}
+
+	return c.NoContent(http.StatusNoContent)
 }
 
 func parseID(c echo.Context, param string) (uint, error) {

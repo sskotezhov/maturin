@@ -21,6 +21,7 @@ type Filter struct {
 // Repository defines the interface for user data access.
 type Repository interface {
 	FindByID(ctx context.Context, id uint) (*User, error)
+	FindByIDs(ctx context.Context, ids []uint) ([]*User, error)
 	FindByEmail(ctx context.Context, email string) (*User, error)
 	FindAllByRole(ctx context.Context, role roles.Role) ([]*User, error)
 	FindFiltered(ctx context.Context, f Filter) ([]*User, int, error)
@@ -106,6 +107,21 @@ func (r *repository) FindByID(ctx context.Context, id uint) (*User, error) {
 		return nil, err
 	}
 	return toEntity(rec), nil
+}
+
+func (r *repository) FindByIDs(ctx context.Context, ids []uint) ([]*User, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	var recs []userRecord
+	if err := r.db.WithContext(ctx).Where("id IN ?", ids).Find(&recs).Error; err != nil {
+		return nil, err
+	}
+	out := make([]*User, len(recs))
+	for i, rec := range recs {
+		out[i] = toEntity(rec)
+	}
+	return out, nil
 }
 
 func (r *repository) FindByEmail(ctx context.Context, email string) (*User, error) {

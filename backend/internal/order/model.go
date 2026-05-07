@@ -1,6 +1,20 @@
 package order
 
-import "time"
+import (
+	"errors"
+	"time"
+)
+
+var ErrOrderNotEditable = errors.New("order cannot be edited in current status")
+
+type UserInfo struct {
+	ID          uint
+	Email       string
+	LastName    string
+	FirstName   string
+	Phone       string
+	CompanyName string
+}
 
 type Status string
 type ResponseStatus string
@@ -21,6 +35,7 @@ const (
 type Order struct {
 	ID             uint
 	UserID         uint
+	User           *UserInfo
 	Status         Status
 	ResponseStatus ResponseStatus
 	TotalPrice     *float64
