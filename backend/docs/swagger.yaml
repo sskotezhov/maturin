@@ -160,8 +160,8 @@ definitions:
         type: number
       updated_at:
         type: string
-      user_id:
-        type: integer
+      user:
+        $ref: '#/definitions/order.userInfoResponse'
     type: object
   order.sendMessageRequest:
     properties:
@@ -174,6 +174,21 @@ definitions:
         type: string
       quantity:
         type: integer
+    type: object
+  order.userInfoResponse:
+    properties:
+      company_name:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: integer
+      last_name:
+        type: string
+      phone:
+        type: string
     type: object
   product.Category:
     properties:
@@ -302,6 +317,8 @@ definitions:
     type: object
   staff.dashboardResponse:
     properties:
+      catalog_synced_at:
+        type: string
       orders_by_status:
         additionalProperties:
           type: integer
@@ -380,8 +397,45 @@ definitions:
         type: number
       updated_at:
         type: string
-      user_id:
+      user:
+        $ref: '#/definitions/staff.userInfoView'
+    type: object
+  staff.staffAddItemRequest:
+    properties:
+      comment:
+        type: string
+      price_snapshot:
+        type: number
+      product_code:
+        type: string
+      product_id:
+        type: string
+      product_name:
+        type: string
+      quantity:
         type: integer
+    type: object
+  staff.staffUpdateItemRequest:
+    properties:
+      comment:
+        type: string
+      quantity:
+        type: integer
+    type: object
+  staff.userInfoView:
+    properties:
+      company_name:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: integer
+      last_name:
+        type: string
+      phone:
+        type: string
     type: object
   user.profileResponse:
     properties:
@@ -1510,6 +1564,141 @@ paths:
       security:
       - BearerAuth: []
       summary: Change public inquiry status (manager/admin)
+      tags:
+      - staff
+  /staff/orders/{id}/items:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Item to add
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/staff.staffAddItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/staff.orderView'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add item to client's order (manager/admin)
+      tags:
+      - staff
+  /staff/orders/{id}/items/{itemID}:
+    delete:
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Item ID
+        in: path
+        name: itemID
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete item from client's order (manager/admin)
+      tags:
+      - staff
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Item ID
+        in: path
+        name: itemID
+        required: true
+        type: integer
+      - description: Updated item
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/staff.staffUpdateItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/staff.orderView'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update item in client's order (manager/admin)
       tags:
       - staff
   /user/me:
