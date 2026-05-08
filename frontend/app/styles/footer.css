@@ -129,6 +129,15 @@
   gap: 20px;
 }
 
+.footer .container .footer-bottom .content a {
+  color: var(--color-white);
+  text-decoration: none;
+}
+
+.footer .container .footer-bottom .content a:hover {
+  opacity: 0.8;
+}
+
 .footer .container .consultation .center .form .center .agreement {
   display: flex;
   align-items: flex-start;

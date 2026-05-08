@@ -79,11 +79,11 @@ export default function Footer() {
                       Нажимая на кнопку отправить, Вы даете свое согласие на
                       обработку Ваших персональных данных и принимаете условия{' '}
                       <a
-                        href="/agreement"
+                        href="/policy"
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        пользовательского соглашения
+                        политику конфиденциальности и обработки персональных данных
                       </a>
                       .
                     </label>
@@ -109,7 +109,7 @@ export default function Footer() {
           <div className="footer-bottom">
             <div className="content">
               <p>&copy; 2026. Все права защищены.</p>
-              <a>Политика конфидециальности</a>
+              <a href="/policy" target="_blank" rel="noopener noreferrer">Политика конфиденциальности и обработки персональных данных</a>
             </div>
           </div>
         </div>
