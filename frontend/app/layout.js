@@ -6,11 +6,7 @@ const inter = Inter({ subsets: ['cyrillic'] });
 
 export const metadata = {
   title: 'Матурин',
-  icons: {
-    icon: '/images/logo.png',
-    apple: '/images/logo.png',
-  },
-  verification: {
+verification: {
     google: 'fAnncsVJVf7iMeaR_i6rsgBrdW5329DN5BUK9RqfBEo',
   },
 };
