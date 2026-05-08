@@ -6,6 +6,10 @@ const inter = Inter({ subsets: ['cyrillic'] });
 
 export const metadata = {
   title: 'Матурин',
+  icons: {
+    icon: '/images/logo.png',
+    apple: '/images/logo.png',
+  },
 };
 
 export default function RootLayout({ children }) {
