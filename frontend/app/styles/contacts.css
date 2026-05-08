@@ -1,0 +1,123 @@
+.contacts-page {
+  min-height: calc(100vh - 80px);
+  background-color: #f8f7fc;
+  padding: 48px 20px 80px;
+}
+
+.contacts-container {
+  max-width: 860px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 12px;
+  padding: 48px 56px;
+  box-shadow: 0 2px 16px rgba(82, 55, 144, 0.08);
+  color: var(--color-black);
+  font-family: Inter, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.contacts-container h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-black-purple);
+  margin-bottom: 36px;
+  line-height: 1.3;
+}
+
+.contacts-section {
+  margin-bottom: 36px;
+}
+
+.contacts-section h2 {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-purple);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(102, 68, 170, 0.15);
+}
+
+.contacts-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 24px;
+}
+
+.contacts-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.contacts-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.contacts-value {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-black);
+}
+
+.contacts-link {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-purple);
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.contacts-link:hover {
+  opacity: 0.75;
+  text-decoration: underline;
+}
+
+.contacts-address {
+  font-size: 15px;
+  color: var(--color-black);
+  margin: 0;
+}
+
+.contacts-employees {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.contacts-employee {
+  background: #f8f7fc;
+  border-radius: 8px;
+  padding: 14px 18px;
+  border-left: 3px solid var(--color-purple);
+}
+
+.contacts-employee-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--color-black-purple);
+  margin-bottom: 2px;
+}
+
+.contacts-employee-role {
+  font-size: 13px;
+  color: #666;
+}
+
+@media (max-width: 768px) {
+  .contacts-container {
+    padding: 28px 20px;
+  }
+
+  .contacts-container h1 {
+    font-size: 20px;
+  }
+
+  .contacts-info-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -67,6 +67,11 @@ export default function Header() {
                 Оборудование и ПО
               </Link>
             </div>
+            <div className="menu-item">
+              <Link href="/contacts" className="menu-link">
+                Контакты
+              </Link>
+            </div>
             <AdminNavItem />
             <CartWidget />
             <ClientAuthWrapper />

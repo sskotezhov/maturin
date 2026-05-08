@@ -31,6 +31,9 @@ export default function AdminNavItem() {
         <Link href="/admin/users" className="menu-link">
           Пользователи
         </Link>
+        <Link href="/admin/calls" className="menu-link">
+          Телефонные заявки
+        </Link>
       </div>
     </div>
   );

@@ -1,8 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import { useAuthForm } from 'utils/useAuthForm';
 
 const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
+  const [agreed, setAgreed] = useState(false);
+  const [agreedError, setAgreedError] = useState(false);
+
   const {
     isLogin, isForgotPassword,
     email, setEmail,
@@ -37,7 +41,18 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
 
         <h2 className="auth-modal-title">{title}</h2>
 
-        <form onSubmit={handleSubmit} className="auth-modal-form">
+        <form
+          onSubmit={(e) => {
+            if (!isLogin && !isForgotPassword && !agreed) {
+              e.preventDefault();
+              setAgreedError(true);
+              return;
+            }
+            setAgreedError(false);
+            handleSubmit(e);
+          }}
+          className="auth-modal-form"
+        >
           <div className="auth-modal-field">
             <label htmlFor="email">Email</label>
             <input
@@ -133,6 +148,32 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
             </div>
           )}
 
+          {!isLogin && !isForgotPassword && (
+            <div className="auth-modal-agreement">
+              <input
+                type="checkbox"
+                id="auth-agreement-checkbox"
+                checked={agreed}
+                onChange={(e) => {
+                  setAgreed(e.target.checked);
+                  if (e.target.checked) setAgreedError(false);
+                }}
+                disabled={isLoading}
+              />
+              <label htmlFor="auth-agreement-checkbox">
+                Нажимая на кнопку зарегистрироваться, Вы даёте своё согласие на
+                обработку Ваших персональных данных и принимаете{' '}
+                <a href="/policy" target="_blank" rel="noopener noreferrer">
+                  политику конфиденциальности и обработки персональных данных
+                </a>
+                .
+              </label>
+              {agreedError && (
+                <p className="auth-agreement-error">Необходимо принять условия соглашения</p>
+              )}
+            </div>
+          )}
+
           {error && (
             <p className={`auth-modal-message ${isSuccessMessage ? 'success-message' : 'error-message'}`}>
               {error}
@@ -152,7 +193,12 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
           ) : (
             <>
               {isLogin ? 'Нет аккаунта?' : 'Уже есть аккаунт?'}{' '}
-              <button type="button" onClick={switchMode} className="auth-modal-switch-btn" disabled={isLoading}>
+              <button
+                type="button"
+                onClick={() => { setAgreed(false); setAgreedError(false); switchMode(); }}
+                className="auth-modal-switch-btn"
+                disabled={isLoading}
+              >
                 {isLogin ? 'Создать' : 'Войти'}
               </button>
             </>
