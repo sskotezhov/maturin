@@ -10,6 +10,9 @@ export const metadata = {
     icon: '/images/logo.png',
     apple: '/images/logo.png',
   },
+  verification: {
+    google: 'fAnncsVJVf7iMeaR_i6rsgBrdW5329DN5BUK9RqfBEo',
+  },
 };
 
 export default function RootLayout({ children }) {
