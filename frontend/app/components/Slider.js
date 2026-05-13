@@ -4,28 +4,15 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
-const API_BASE = 'https://матурин15.рф/api/v1';
-
 const DEFAULT_SLIDES = [
-  { alt: 'Слайд 1', image: '/images/homeslider/slide1.png', row1: 'БУХГАЛТЕРСКОЕ', row2: 'ОБСЛУЖИВАНИЕ', row3: '', href: '/' },
-  { alt: 'Слайд 2', image: '/images/homeslider/slide1.png', row1: 'Текст2',        row2: 'Текст2',        row3: '', href: '/' },
-  { alt: 'Слайд 3', image: '/images/homeslider/slide1.png', row1: 'Текст3',        row2: 'Текст3',        row3: '', href: '/' },
-  { alt: 'Слайд 4', image: '/images/homeslider/slide1.png', row1: 'Текст4',        row2: 'Текст4',        row3: '', href: '/services/service4' },
+  { alt: '1С:Контрагент на 12 месяцев',                          image: '/images/homeslider/slide1.png', row1: '', row2: '1С:Контрагент на 12 месяцев',                          row3: '5 800 ₽',        href: '/software_catalogue/160c6304-ffb4-11ed-827c-fa163e38e500' },
+  { alt: 'Консультации по работе в "ЕГАИС"',                     image: '/images/homeslider/slide1.png', row1: '', row2: 'Консультации по работе в "ЕГАИС"',                     row3: 'Цена по запросу', href: '/software_catalogue/13d3a3aa-b92a-11ef-9039-fa163e9d935d' },
+  { alt: 'Консультации по бухгалтерскому и налоговому учету',    image: '/images/homeslider/slide1.png', row1: '', row2: 'Консультации по бухгалтерскому и налоговому учету',    row3: 'Цена по запросу', href: '/software_catalogue/eaf23b38-a8d7-11f0-8ee8-fa163e400fd3' },
+  { alt: 'Консультации по работе в системе "Честный знак"',      image: '/images/homeslider/slide1.png', row1: '', row2: 'Консультации по работе в системе "Честный знак"',      row3: 'Цена по запросу', href: '/software_catalogue/e531a046-fee1-11ed-827c-fa163e38e500' },
 ];
 
-function productToSlide(p) {
-  return {
-    alt:   p.full_name || p.name || '',
-    image: '/images/homeslider/slide1.png',
-    row1:  '',
-    row2:  p.full_name || p.name || '',
-    row3:  p.price != null ? `${Number(p.price).toLocaleString('ru-RU')} ₽` : '',
-    href:  `/software_catalogue/${p.id}`,
-  };
-}
-
-const Slider = () => {
-  const [slides, setSlides] = useState(DEFAULT_SLIDES);
+const Slider = ({ initialSlides }) => {
+  const [slides, setSlides] = useState(initialSlides || DEFAULT_SLIDES);
 
   const [current,          setCurrent]          = useState(1);
   const [isDragging,       setIsDragging]       = useState(false);
@@ -40,24 +27,6 @@ const Slider = () => {
   const isTransitioningRef  = useRef(false);
   const currentRef          = useRef(1);
 
-  useEffect(() => {
-    fetch(`${API_BASE}/banner`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!data) return;
-        const items = data.items || [];
-        const products = items
-          .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-          .map((item) => item.product)
-          .filter(Boolean);
-        if (!products.length) return;
-        setSlides(products.map(productToSlide));
-        isTransitioningRef.current = false;
-        setCurrent(1);
-        setCurrentTranslate(-100);
-      })
-      .catch(() => {});
-  }, []);
 
   const extendedSlides = [slides[slides.length - 1], ...slides, slides[0]];
 
@@ -229,12 +198,16 @@ const Slider = () => {
                 <span className="border-right-top"></span>
                 <span className="border-right-bottom"></span>
                 <div className="slide-text-content">
-                  <div className="first-row">{slide.row1}</div>
-                  <div className="second-row">{slide.row2}</div>
-                  {slide.row3 && <div className="third-row">{slide.row3}</div>}
-                  <Link href={slide.href} className="capsule" prefetch={false}>
-                    Подробнее
-                  </Link>
+                  <div className="slide-text-rows">
+                    <div className="first-row">{slide.row1}</div>
+                    <div className="second-row">{slide.row2}</div>
+                  </div>
+                  <div className="slide-text-bottom">
+                    {slide.row3 && <div className="third-row">{slide.row3}</div>}
+                    <Link href={slide.href} className="capsule" prefetch={false}>
+                      Подробнее
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>

@@ -1,40 +1,70 @@
-@media (max-width: 768px) {
+@media (max-width: 1240px) {
+    .footer,
+    .footer .container {
+        background-color: var(--color-black-purple);
+    }
+
+    .footer .container .consultation {
+        display: flex !important;
+    }
+
     .footer .container .consultation .lp,
     .footer .container .consultation .rp {
-        display: none;
+        display: none !important;
     }
 
     .footer .container .consultation .center {
+        width: 100% !important;
         height: auto !important;
-        padding: 40px 20px;
+        padding: 32px 16px !important;
+        gap: 20px !important;
+        box-sizing: border-box;
+    }
+
+    .footer .container .consultation .center .title {
+        font-size: clamp(16px, 3.5vw, 24px) !important;
+        text-align: center;
+        line-height: 1.3;
     }
 
     .footer .container .consultation .center .form {
         width: 100% !important;
-        max-width: 500px;
         height: auto !important;
-        padding: 20px;
+        padding: 20px 16px !important;
+        border-radius: 12px !important;
+        border-width: 2px !important;
+        box-sizing: border-box;
     }
 
     .footer .container .consultation .center .form .center {
         width: 100% !important;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
     }
 
     .footer .container .consultation .center .creds {
-        flex-direction: column !important;
-        gap: 16px;
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 10px !important;
     }
 
     .footer .container .consultation .center .creds .name,
     .footer .container .consultation .center .creds .phone {
-        width: 100% !important;
+        flex: 1 1 calc(50% - 5px) !important;
+        max-width: calc(50% - 5px) !important;
+        min-width: 0 !important;
+        width: auto !important;
     }
 
     .footer .container .consultation .center .creds .name input,
     .footer .container .consultation .center .creds .phone input {
         width: 100% !important;
-        height: 44px !important;
+        height: 48px !important;
         font-size: 16px !important;
+        padding: 0 14px !important;
+        box-sizing: border-box;
     }
 
     .footer .container .consultation .center .comment {
@@ -43,21 +73,38 @@
 
     .footer .container .consultation .center .comment textarea {
         width: 100% !important;
+        height: 80px !important;
         font-size: 16px !important;
+        padding: 10px 14px !important;
+        box-sizing: border-box;
     }
 
     .footer .container .consultation .center .agreement {
         width: 100% !important;
-        font-size: 11px !important;
+        font-size: 12px !important;
+        margin-top: 0 !important;
+        align-items: flex-start;
+        gap: 8px;
+        line-height: 1.5;
     }
 
-    .footer .container .consultation .center .title {
-        font-size: 20px !important;
-        text-align: center;
+    .footer .container .consultation .center .agreement input[type='checkbox'] {
+        flex-shrink: 0;
+        width: 18px !important;
+        height: 18px !important;
+        margin-top: 2px;
     }
 
     .footer-form-error {
         width: 100% !important;
+        box-sizing: border-box;
+        font-size: 13px !important;
+    }
+
+    .footer-submit-btn {
+        width: 100% !important;
+        height: 48px !important;
+        font-size: 15px !important;
     }
 
     .footer .container .footer-bottom .content {
