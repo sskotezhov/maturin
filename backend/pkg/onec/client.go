@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -145,6 +146,8 @@ func (c *Client) CreateOrder(ctx context.Context, in CreateOrderInput) (*Created
 	if err != nil {
 		return nil, fmt.Errorf("marshal 1C order: %w", err)
 	}
+
+	log.Printf("[1C] create order payload: %s", string(payload))
 
 	endpoint := "Document_" + url.PathEscape("ЗаказПокупателя")
 	rawURL := c.baseURL + "/" + endpoint + "?%24format=json"
