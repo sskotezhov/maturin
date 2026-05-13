@@ -4,11 +4,47 @@ import '../styles/contacts.css';
 
 export const metadata = {
   title: 'Контакты — Матурин',
+  description:
+    'Адрес, телефон, электронная почта и реквизиты компании Матурин. г. Владикавказ, ул. Гибизова, дом 10. Тел: 8 (8672) 91-30-10.',
+  openGraph: {
+    title: 'Контакты — Матурин',
+    description: 'Адрес, телефон и реквизиты компании Матурин. г. Владикавказ.',
+    locale: 'ru_RU',
+    type: 'website',
+    url: 'https://матурин15.рф/contacts',
+  },
+  alternates: { canonical: 'https://матурин15.рф/contacts' },
+};
+
+const localBusinessJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'LocalBusiness',
+  name: 'Матурин',
+  taxID: '1513075571',
+  url: 'https://матурин15.рф',
+  telephone: '+78672913010',
+  email: 'ooo.maturin@gmail.com',
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: 'ул. Гибизова, дом 10',
+    addressLocality: 'Владикавказ',
+    addressRegion: 'Республика Северная Осетия — Алания',
+    postalCode: '362040',
+    addressCountry: 'RU',
+  },
+  employee: [
+    { '@type': 'Person', name: 'Бабочиева Раиса Валентиновна', jobTitle: 'Генеральный директор' },
+    { '@type': 'Person', name: 'Магаева Роксана Казбековна',   jobTitle: 'Менеджер по продажам' },
+  ],
 };
 
 export default function ContactsPage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessJsonLd) }}
+      />
       <Header />
       <main className="contacts-page">
         <div className="contacts-container">

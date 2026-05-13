@@ -64,12 +64,7 @@ export default function Header() {
             </div>
             <div className="menu-item">
               <Link href="/software_catalogue" className="menu-link">
-                Оборудование и ПО
-              </Link>
-            </div>
-            <div className="menu-item">
-              <Link href="/contacts" className="menu-link">
-                Контакты
+                Каталог
               </Link>
             </div>
             <AdminNavItem />

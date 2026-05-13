@@ -63,7 +63,7 @@ function AddItemModal({ orderId, onClose, onAdded }) {
           const data = await res.json();
           setResults(data.items || []);
         }
-      } catch { /* network error */ } finally {
+      } catch { } finally {
         setSearching(false);
       }
     }, 300);

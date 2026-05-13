@@ -1,4 +1,4 @@
-@media (max-width: 768px) {
+@media (max-width: 1240px) {
     .mobile-menu-btn {
         display: flex !important;
         flex-direction: column !important;
@@ -35,7 +35,7 @@
         left: 0;
         bottom: 0;
         width: 85vw;
-        max-width: 320px;
+        max-width: 360px;
         background: var(--color-purple);
         box-shadow: 4px 0 30px rgba(0, 0, 0, 0.4);
         z-index: 9999;
@@ -125,5 +125,28 @@
 
     .mobile-dropdown-content a:active {
         background: rgba(255, 255, 255, 0.2);
+    }
+
+    .mobile-menu-contacts {
+        padding: 20px;
+        border-top: 1px solid rgba(255, 255, 255, 0.15);
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .mobile-menu-contact-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    .mobile-menu-contact-item img {
+        flex-shrink: 0;
+        margin-top: 2px;
+        filter: brightness(0) invert(1);
     }
 }

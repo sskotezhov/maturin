@@ -1,4 +1,4 @@
-@media (max-width: 768px) {
+@media (max-width: 1240px) {
     .auth-modal {
         width: calc(100% - 32px) !important;
         max-width: 400px;
