@@ -29,6 +29,29 @@ export default function AdminDashboardPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [syncMsg,     setSyncMsg]     = useState(null);
+
+  const syncCatalog = async () => {
+    setSyncLoading(true);
+    setSyncMsg(null);
+    try {
+      const res = await apiFetch('/staff/cache/refresh', { method: 'POST' });
+      if (res.ok) {
+        setSyncMsg({ text: 'Каталог синхронизирован', error: false });
+        fetchData();
+      } else {
+        const d = await res.json().catch(() => ({}));
+        setSyncMsg({ text: d.detail || 'Ошибка синхронизации', error: true });
+      }
+    } catch {
+      setSyncMsg({ text: 'Ошибка соединения', error: true });
+    } finally {
+      setSyncLoading(false);
+      setTimeout(() => setSyncMsg(null), 4000);
+    }
+  };
+
   const [bannerSlots,    setBannerSlots]    = useState(Array(BANNER_SLOTS).fill(null));
   const [bannerLoading,  setBannerLoading]  = useState(true);
   const [activeSlot,     setActiveSlot]     = useState(null);
@@ -143,12 +166,13 @@ export default function AdminDashboardPage() {
     );
   }
 
-  const byStatus  = data?.orders_by_status ?? {};
-  const stale     = data?.stale_submitted_count ?? 0;
-  const submitted = byStatus.submitted  ?? 0;
-  const approved  = byStatus.approved   ?? 0;
-  const cancelled = byStatus.cancelled  ?? 0;
-  const total     = Object.values(byStatus).reduce((s, v) => s + v, 0);
+  const byStatus      = data?.orders_by_status ?? {};
+  const stale         = data?.stale_submitted_count ?? 0;
+  const submitted     = byStatus.submitted  ?? 0;
+  const approved      = byStatus.approved   ?? 0;
+  const cancelled     = byStatus.cancelled  ?? 0;
+  const total         = Object.values(byStatus).reduce((s, v) => s + v, 0);
+  const syncedAt      = data?.catalog_synced_at ?? null;
 
   return (
     <>
@@ -203,6 +227,29 @@ export default function AdminDashboardPage() {
                   </div>
                 </>
               )}
+
+              <div className="dashboard-catalog-sync">
+                <p className="dashboard-section-title">Каталог 1С</p>
+                <div className="catalog-sync-row">
+                  <button
+                    className="dashboard-quick-btn"
+                    onClick={syncCatalog}
+                    disabled={syncLoading}
+                  >
+                    {syncLoading ? 'Синхронизация...' : 'Синхронизировать каталог'}
+                  </button>
+                  {syncMsg && (
+                    <span className={`banner-save-msg ${syncMsg.error ? 'banner-save-msg-error' : 'banner-save-msg-ok'}`}>
+                      {syncMsg.text}
+                    </span>
+                  )}
+                </div>
+                <p className="catalog-sync-time">
+                  {syncedAt
+                    ? `Последняя синхронизация: ${new Date(syncedAt).toLocaleString('ru-RU')}`
+                    : 'Синхронизация ещё не выполнялась'}
+                </p>
+              </div>
 
               <div className="banner-picker">
                 <p className="dashboard-section-title">Баннер на главной</p>
