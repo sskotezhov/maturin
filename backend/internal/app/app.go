@@ -98,7 +98,7 @@ func New(cfg *config.Config, db *gorm.DB, rdb *redis.Client) (*App, error) {
 
 	// order, частный случай у меня draft - cart
 	cartRepo := order.NewRepository(db)
-	cartSvc := order.NewService(cartRepo, userRepo, emailSender, rdb)
+	cartSvc := order.NewService(cartRepo, userRepo, emailSender, rdb, oneCClient)
 	cartHandler := order.NewHandler(cartSvc)
 
 	api := e.Group("/api/v1")

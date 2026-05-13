@@ -87,6 +87,8 @@ type orderView struct {
 	Status         string          `json:"status"`
 	ResponseStatus string          `json:"response_status"`
 	TotalPrice     *float64        `json:"total_price"`
+	OnecRef        *string         `json:"onec_ref"`
+	OnecNumber     *string         `json:"onec_number"`
 	Items          []orderItemView `json:"items"`
 	CreatedAt      string          `json:"created_at"`
 	UpdatedAt      string          `json:"updated_at"`
@@ -187,6 +189,8 @@ func toOrderView(o *order.Order) orderView {
 		Status:         string(o.Status),
 		ResponseStatus: orderResponseStatus(o),
 		TotalPrice:     o.TotalPrice,
+		OnecRef:        o.OnecRef,
+		OnecNumber:     o.OnecNumber,
 		Items:          items,
 		CreatedAt:      o.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt:      o.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),

@@ -25,7 +25,7 @@ func newTestOrderService(t *testing.T) (order.Service, *mockOrderRepo, *mockOrde
 	orderRepo := &mockOrderRepo{}
 	userRepo := &mockOrderUserRepo{}
 	emailSender := &mockOrderEmailSender{}
-	svc := order.NewService(orderRepo, userRepo, emailSender, rdb)
+	svc := order.NewService(orderRepo, userRepo, emailSender, rdb, nil)
 	return svc, orderRepo, userRepo, emailSender, mr
 }
 

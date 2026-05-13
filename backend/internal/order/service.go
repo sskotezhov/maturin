@@ -11,8 +11,11 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/sskotezhov/maturin/internal/user"
+	"github.com/sskotezhov/maturin/pkg/onec"
 	"github.com/sskotezhov/maturin/pkg/roles"
 )
+
+const defaultCounterpartKey = "601fe286-1c24-11f0-8022-fa163e9d935d"
 
 var (
 	ErrNotFound        = errors.New("not found")
@@ -62,19 +65,25 @@ type Service interface {
 	StaffDeleteItem(ctx context.Context, actorID, orderID uint, itemID uint) error
 }
 
+type onecCreator interface {
+	CreateOrder(ctx context.Context, in onec.CreateOrderInput) (*onec.CreatedOrder, error)
+}
+
 type service struct {
 	repo        Repository
 	userRepo    user.Repository
 	emailSender EmailSender
 	rdb         *redis.Client
+	onec        onecCreator
 }
 
-func NewService(repo Repository, userRepo user.Repository, emailSender EmailSender, rdb *redis.Client) Service {
+func NewService(repo Repository, userRepo user.Repository, emailSender EmailSender, rdb *redis.Client, onecCl onecCreator) Service {
 	return &service{
 		repo:        repo,
 		userRepo:    userRepo,
 		emailSender: emailSender,
 		rdb:         rdb,
+		onec:        onecCl,
 	}
 }
 
@@ -313,6 +322,8 @@ func (s *service) ApproveOrder(ctx context.Context, userID uint, role string, or
 
 	slog.Info("order approved", "order_id", orderID, "total_price", totalPrice)
 
+	go s.syncToOnec(order, totalPrice)
+
 	client, err := s.userRepo.FindByID(ctx, order.UserID)
 	if err != nil {
 		slog.Error("approve: fetch client failed", "client_id", order.UserID, "err", err)
@@ -326,6 +337,46 @@ func (s *service) ApproveOrder(ctx context.Context, userID uint, role string, or
 	order.ResponseStatus = ResponseNone
 	order.TotalPrice = &totalPrice
 	return order, nil
+}
+
+func (s *service) syncToOnec(ord *Order, totalPrice float64) {
+	if s.onec == nil {
+		return
+	}
+	slog.Info("syncing order to 1C", "order_id", ord.ID, "items", len(ord.Items), "total", totalPrice)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	items := make([]onec.OrderItem, len(ord.Items))
+	for i, item := range ord.Items {
+		price := 0.0
+		if item.PriceSnapshot != nil {
+			price = *item.PriceSnapshot
+		}
+		items[i] = onec.OrderItem{
+			NomenclatureKey: item.ProductID,
+			Name:            item.ProductName,
+			Quantity:        item.Quantity,
+			Price:           price,
+		}
+	}
+
+	created, err := s.onec.CreateOrder(ctx, onec.CreateOrderInput{
+		CounterpartKey: defaultCounterpartKey,
+		Comment:        fmt.Sprintf("Заказ #%d с сайта", ord.ID),
+		TotalAmount:    totalPrice,
+		Items:          items,
+	})
+	if err != nil {
+		slog.Error("1C sync failed", "order_id", ord.ID, "err", err)
+		return
+	}
+
+	if err := s.repo.SetOnecRef(ctx, ord.ID, created.RefKey, created.Number); err != nil {
+		slog.Error("save 1C ref failed", "order_id", ord.ID, "ref", created.RefKey, "err", err)
+		return
+	}
+	slog.Info("order synced to 1C", "order_id", ord.ID, "onec_number", created.Number)
 }
 
 func (s *service) enrichResponseStatuses(ctx context.Context, orders []*Order) {

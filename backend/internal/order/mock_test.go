@@ -111,6 +111,11 @@ func (m *mockOrderRepo) FindLastMessage(ctx context.Context, orderID uint) (*ord
 	return args.Get(0).(*order.Message), args.Error(1)
 }
 
+func (m *mockOrderRepo) SetOnecRef(ctx context.Context, id uint, ref, number string) error {
+	args := m.Called(ctx, id, ref, number)
+	return args.Error(0)
+}
+
 type mockOrderUserRepo struct{ mock.Mock }
 
 func (m *mockOrderUserRepo) FindByID(ctx context.Context, id uint) (*user.User, error) {
