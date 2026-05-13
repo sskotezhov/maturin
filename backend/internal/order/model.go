@@ -39,6 +39,8 @@ type Order struct {
 	Status         Status
 	ResponseStatus ResponseStatus
 	TotalPrice     *float64
+	OnecRef        *string
+	OnecNumber     *string
 	Items          []Item
 	CreatedAt      time.Time
 	UpdatedAt      time.Time

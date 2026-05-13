@@ -25,6 +25,7 @@ type Repository interface {
 	CountStaleSubmitted(ctx context.Context, threshold time.Duration) (int, error)
 	Create(ctx context.Context, order *Order) error
 	UpdateStatus(ctx context.Context, id uint, status Status, totalPrice *float64) error
+	SetOnecRef(ctx context.Context, id uint, ref, number string) error
 	AddItem(ctx context.Context, item *Item) error
 	UpdateItem(ctx context.Context, item *Item) error
 	DeleteItem(ctx context.Context, itemID uint) error
@@ -39,6 +40,8 @@ type orderRecord struct {
 	UserID     uint         `gorm:"not null;index"`
 	Status     string       `gorm:"type:varchar(20);not null;default:'draft'"`
 	TotalPrice *float64     `gorm:"type:numeric(12,2)"`
+	OnecRef    *string      `gorm:"type:varchar(36)"`
+	OnecNumber *string      `gorm:"type:varchar(50)"`
 	Items      []itemRecord `gorm:"foreignKey:OrderID"`
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
@@ -84,6 +87,8 @@ func toOrderEntity(rec orderRecord) *Order {
 		UserID:     rec.UserID,
 		Status:     Status(rec.Status),
 		TotalPrice: rec.TotalPrice,
+		OnecRef:    rec.OnecRef,
+		OnecNumber: rec.OnecNumber,
 		Items:      items,
 		CreatedAt:  rec.CreatedAt,
 		UpdatedAt:  rec.UpdatedAt,
@@ -178,6 +183,11 @@ func (r *repository) Create(ctx context.Context, order *Order) error {
 	order.CreatedAt = rec.CreatedAt
 	order.UpdatedAt = rec.UpdatedAt
 	return nil
+}
+
+func (r *repository) SetOnecRef(ctx context.Context, id uint, ref, number string) error {
+	return r.db.WithContext(ctx).Model(&orderRecord{}).Where("id = ?", id).
+		Updates(map[string]any{"onec_ref": ref, "onec_number": number}).Error
 }
 
 func (r *repository) UpdateStatus(ctx context.Context, id uint, status Status, totalPrice *float64) error {
