@@ -139,6 +139,7 @@ func (c *Client) CreateOrder(ctx context.Context, in CreateOrderInput) (*Created
 		"ВалютаДокумента_Key": OrderCurrencyKey,
 		"Комментарий":         in.Comment,
 		"СуммаДокумента":      in.TotalAmount,
+		"Запасы@odata.type":   "Collection(StandardODATA.Document_ЗаказПокупателя_Запасы_RowType)",
 		"Запасы":              items,
 	}
 
