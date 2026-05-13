@@ -1184,6 +1184,24 @@
   opacity: 0.45;
 }
 
+.dashboard-catalog-sync {
+  margin-bottom: 32px;
+}
+
+.catalog-sync-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.catalog-sync-time {
+  font-size: 13px;
+  color: var(--color-black);
+  opacity: 0.5;
+  margin: 0;
+}
+
 .banner-save-row {
   display: flex;
   align-items: center;
