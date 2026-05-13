@@ -108,24 +108,26 @@ type CreatedOrder struct {
 
 func (c *Client) CreateOrder(ctx context.Context, in CreateOrderInput) (*CreatedOrder, error) {
 	type itemBody struct {
-		LineNumber      int     `json:"LineNumber"`
-		NomenclatureKey string  `json:"Номенклатура_Key"`
-		Quantity        float64 `json:"Количество"`
-		Price           float64 `json:"Цена"`
-		Sum             float64 `json:"Сумма"`
-		Total           float64 `json:"Всего"`
+		LineNumber       int     `json:"LineNumber"`
+		NomenclatureKey  string  `json:"Номенклатура_Key"`
+		NomenclatureType string  `json:"Номенклатура_Type"`
+		Quantity         float64 `json:"Количество"`
+		Price            float64 `json:"Цена"`
+		Sum              float64 `json:"Сумма"`
+		Total            float64 `json:"Всего"`
 	}
 
 	items := make([]itemBody, len(in.Items))
 	for i, item := range in.Items {
 		sum := item.Price * float64(item.Quantity)
 		items[i] = itemBody{
-			LineNumber:      i + 1,
-			NomenclatureKey: item.NomenclatureKey,
-			Quantity:        float64(item.Quantity),
-			Price:           item.Price,
-			Sum:             sum,
-			Total:           sum,
+			LineNumber:       i + 1,
+			NomenclatureKey:  item.NomenclatureKey,
+			NomenclatureType: "StandardODATA.Catalog_Номенклатура",
+			Quantity:         float64(item.Quantity),
+			Price:            item.Price,
+			Sum:              sum,
+			Total:            sum,
 		}
 	}
 
