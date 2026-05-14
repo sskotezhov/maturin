@@ -9,6 +9,9 @@ export const metadata = {
 verification: {
     google: 'fAnncsVJVf7iMeaR_i6rsgBrdW5329DN5BUK9RqfBEo',
   },
+  icons: {
+	  icon: '/images/logo.png',
+  }
 };
 
 export default function RootLayout({ children }) {
